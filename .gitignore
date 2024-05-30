@@ -1,0 +1,8 @@
+# Ignore typical virtual environment directories
+venv/
+env/
+.env/
+.zip/
+
+# Ignore any directory named "venv" at any level in the directory structure
+**/venv/
