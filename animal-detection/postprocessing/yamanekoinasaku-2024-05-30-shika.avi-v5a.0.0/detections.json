@@ -1,0 +1,912 @@
+{
+ "images": [
+  {
+   "file": "../video-processed/shika.AVI/frame000000.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.948,
+     "bbox": [
+      0.02265,
+      0.001388,
+      0.5679,
+      0.6055
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000010.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.959,
+     "bbox": [
+      0.05781,
+      0,
+      0.5656,
+      0.5361
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000020.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.951,
+     "bbox": [
+      0.1601,
+      0.001388,
+      0.5234,
+      0.5388
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000030.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.927,
+     "bbox": [
+      0.2328,
+      0.001388,
+      0.5281,
+      0.5611
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000040.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.949,
+     "bbox": [
+      0.2507,
+      0.001388,
+      0.5953,
+      0.5375
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000050.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.93,
+     "bbox": [
+      0.3093,
+      0.001388,
+      0.5687,
+      0.5347
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000060.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.939,
+     "bbox": [
+      0.3695,
+      0.001388,
+      0.5093,
+      0.5361
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000070.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.942,
+     "bbox": [
+      0.3843,
+      0.001388,
+      0.5109,
+      0.5263
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000080.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.961,
+     "bbox": [
+      0.3992,
+      0,
+      0.5414,
+      0.4958
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000090.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.911,
+     "bbox": [
+      0.4804,
+      0,
+      0.4914,
+      0.5194
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000100.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.938,
+     "bbox": [
+      0.5828,
+      0,
+      0.3499,
+      0.4972
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000110.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.923,
+     "bbox": [
+      0.607,
+      0,
+      0.3632,
+      0.4944
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000120.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.914,
+     "bbox": [
+      0.6976,
+      0,
+      0.2984,
+      0.4541
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000130.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.937,
+     "bbox": [
+      0.7398,
+      0,
+      0.2601,
+      0.393
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000140.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.853,
+     "bbox": [
+      0.7953,
+      0,
+      0.2046,
+      0.3277
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000150.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.846,
+     "bbox": [
+      0.8671,
+      0.001388,
+      0.1328,
+      0.2402
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000160.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.82,
+     "bbox": [
+      0.882,
+      0,
+      0.1179,
+      0.2361
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000170.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.79,
+     "bbox": [
+      0.8914,
+      0.001388,
+      0.1085,
+      0.2597
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000180.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.0214,
+     "bbox": [
+      0.8976,
+      0,
+      0.1023,
+      0.2874
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000190.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00848,
+     "bbox": [
+      0.7453,
+      0.3791,
+      0.04296,
+      0.04305
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000200.jpg",
+   "detections": []
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000210.jpg",
+   "detections": []
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000220.jpg",
+   "detections": []
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000230.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00519,
+     "bbox": [
+      0.746,
+      0.3805,
+      0.0414,
+      0.04305
+     ]
+    },
+    {
+     "category": "1",
+     "conf": 0.00603,
+     "bbox": [
+      0.7031,
+      0.4624,
+      0.02031,
+      0.03472
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000240.jpg",
+   "detections": []
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000250.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00531,
+     "bbox": [
+      0.5632,
+      0.5847,
+      0.06484,
+      0.08194
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000260.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.0079,
+     "bbox": [
+      0.7445,
+      0.3819,
+      0.04374,
+      0.04305
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000270.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00568,
+     "bbox": [
+      0.7445,
+      0.3805,
+      0.04453,
+      0.04444
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000280.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00569,
+     "bbox": [
+      0.2726,
+      0.625,
+      0.1695,
+      0.143
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000290.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.0672,
+     "bbox": [
+      0.2273,
+      0.6222,
+      0.2164,
+      0.1888
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000300.jpg",
+   "detections": []
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000310.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00593,
+     "bbox": [
+      0.6046,
+      0.6333,
+      0.01875,
+      0.03194
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000320.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00509,
+     "bbox": [
+      0.9734,
+      0.7694,
+      0.02421,
+      0.03888
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000330.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00606,
+     "bbox": [
+      0.5656,
+      0.5777,
+      0.0625,
+      0.09305
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000340.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00557,
+     "bbox": [
+      0.8054,
+      0.5166,
+      0.03046,
+      0.04722
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000350.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.0108,
+     "bbox": [
+      0.7953,
+      0.518,
+      0.0414,
+      0.06527
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000360.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00641,
+     "bbox": [
+      0.8023,
+      0.518,
+      0.03515,
+      0.07638
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000370.jpg",
+   "detections": []
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000380.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00601,
+     "bbox": [
+      0.7375,
+      0.3805,
+      0.05312,
+      0.04583
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000390.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.0109,
+     "bbox": [
+      0.8054,
+      0.5166,
+      0.03046,
+      0.04583
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000400.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00691,
+     "bbox": [
+      0.7992,
+      0.518,
+      0.04531,
+      0.1166
+     ]
+    },
+    {
+     "category": "1",
+     "conf": 0.0126,
+     "bbox": [
+      0.8062,
+      0.5152,
+      0.02968,
+      0.04583
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000410.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00808,
+     "bbox": [
+      0.9734,
+      0.7694,
+      0.02421,
+      0.0375
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000420.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.0128,
+     "bbox": [
+      0.8007,
+      0.518,
+      0.03593,
+      0.0625
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000430.jpg",
+   "detections": []
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000440.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00934,
+     "bbox": [
+      0.9726,
+      0.7666,
+      0.02578,
+      0.04305
+     ]
+    },
+    {
+     "category": "1",
+     "conf": 0.0125,
+     "bbox": [
+      0.8039,
+      0.5166,
+      0.03281,
+      0.05277
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000450.jpg",
+   "detections": []
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000460.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00502,
+     "bbox": [
+      0.7453,
+      0.3805,
+      0.04218,
+      0.04305
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000470.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00641,
+     "bbox": [
+      0.7414,
+      0.3791,
+      0.03515,
+      0.04305
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000480.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.0068,
+     "bbox": [
+      0.8015,
+      0.518,
+      0.03515,
+      0.0625
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000490.jpg",
+   "detections": []
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000500.jpg",
+   "detections": []
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000510.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.005,
+     "bbox": [
+      0.8023,
+      0.518,
+      0.03437,
+      0.06527
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000520.jpg",
+   "detections": []
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000530.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00905,
+     "bbox": [
+      0.7054,
+      0.4527,
+      0.1296,
+      0.1152
+     ]
+    },
+    {
+     "category": "1",
+     "conf": 0.0115,
+     "bbox": [
+      0.8039,
+      0.5166,
+      0.03203,
+      0.04722
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000540.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.0135,
+     "bbox": [
+      0.807,
+      0.5152,
+      0.0289,
+      0.04583
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000550.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00535,
+     "bbox": [
+      0.8007,
+      0.5194,
+      0.04296,
+      0.1152
+     ]
+    },
+    {
+     "category": "1",
+     "conf": 0.00637,
+     "bbox": [
+      0.8031,
+      0.5166,
+      0.03515,
+      0.05833
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000560.jpg",
+   "detections": []
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000570.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.0129,
+     "bbox": [
+      0.8062,
+      0.5166,
+      0.02968,
+      0.04583
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000580.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00516,
+     "bbox": [
+      0.807,
+      0.5152,
+      0.0289,
+      0.04722
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000590.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00765,
+     "bbox": [
+      0.7054,
+      0.4527,
+      0.1312,
+      0.118
+     ]
+    },
+    {
+     "category": "1",
+     "conf": 0.00906,
+     "bbox": [
+      0.8085,
+      0.5166,
+      0.02656,
+      0.04444
+     ]
+    },
+    {
+     "category": "1",
+     "conf": 0.032,
+     "bbox": [
+      0.8023,
+      0.518,
+      0.03515,
+      0.07916
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000600.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00726,
+     "bbox": [
+      0.3593,
+      0.4083,
+      0.0664,
+      0.05972
+     ]
+    },
+    {
+     "category": "1",
+     "conf": 0.00887,
+     "bbox": [
+      0.807,
+      0.5152,
+      0.02812,
+      0.04444
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000610.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00504,
+     "bbox": [
+      0.7445,
+      0.3819,
+      0.04296,
+      0.04166
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shika.AVI/frame000620.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.00751,
+     "bbox": [
+      0.7468,
+      0.3805,
+      0.04062,
+      0.04305
+     ]
+    }
+   ]
+  }
+ ],
+ "detection_categories": {
+  "1": "animal",
+  "2": "person",
+  "3": "vehicle"
+ },
+ "info": {
+  "detection_completion_time": "2024-05-30 09:52:03",
+  "format_version": "1.3",
+  "detector": "unknown",
+  "detector_metadata": {
+   "megadetector_version": "unknown",
+   "typical_detection_threshold": 0.5,
+   "conservative_detection_threshold": 0.25
+  }
+ }
+}

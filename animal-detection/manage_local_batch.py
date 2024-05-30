@@ -18,14 +18,15 @@ from megadetector.utils import path_utils
 from tqdm import tqdm
 
 # Paths and job configuration
-input_path = r'C:\yamaneko-kenkyu\animal-detection\video-processed\rat.AVI'
+video_name="karasu.mp4"
+input_path = r"C:\yamaneko-kenkyu\animal-detection\video-processed/"+ video_name
 output_base = 'C:/yamaneko-kenkyu/animal-detection/postprocessing'
 organization_name_short = 'yamanekoinasaku'
 job_date = str(datetime.date.today())
 model_file = 'MDV5A'
 
 # Output paths
-job_name = f"{organization_name_short}-{job_date}-v5a.0.0"
+job_name = f"{organization_name_short}-{job_date}-{video_name}-v5a.0.0"
 output_folder = os.path.join(output_base, job_name)
 os.makedirs(output_folder, exist_ok=True)
 output_json = os.path.join(output_folder, 'detections.json')

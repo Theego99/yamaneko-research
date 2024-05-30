@@ -1,2 +1,3 @@
 the tuning of the confidence threshold for decididng whether there is or not an animal there was very important
 
+find the right balance between image quality resizing when turning video into frames and accuracy of model, also between day and night might differ
