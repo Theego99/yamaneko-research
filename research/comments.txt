@@ -1,0 +1,2 @@
+the tuning of the confidence threshold for decididng whether there is or not an animal there was very important
+
