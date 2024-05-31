@@ -16,7 +16,7 @@ frame_folder_base = r'C:/yamaneko-kenkyu/animal-detection/video-processed'
 
 os.makedirs(frame_folder_base, exist_ok=True)
 
-every_n_frames = 10
+every_n_frames = 20
 recursive = True
 overwrite = True
 parallelization_uses_threads = True

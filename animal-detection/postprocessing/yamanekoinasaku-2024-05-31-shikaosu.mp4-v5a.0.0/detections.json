@@ -1,0 +1,244 @@
+{
+ "images": [
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000000.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.936,
+     "bbox": [
+      0.5302,
+      0,
+      0.3343,
+      0.8601
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000020.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.939,
+     "bbox": [
+      0.5307,
+      0,
+      0.3348,
+      0.862
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000040.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.946,
+     "bbox": [
+      0.5312,
+      0,
+      0.3333,
+      0.8629
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000060.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.943,
+     "bbox": [
+      0.5322,
+      0,
+      0.3307,
+      0.8629
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000080.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.941,
+     "bbox": [
+      0.5328,
+      0,
+      0.3286,
+      0.8629
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000100.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.97,
+     "bbox": [
+      0.476,
+      0,
+      0.3848,
+      0.8629
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000120.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.948,
+     "bbox": [
+      0.5458,
+      0.002777,
+      0.3411,
+      0.862
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000140.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.921,
+     "bbox": [
+      0.5328,
+      0.001851,
+      0.3265,
+      0.875
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000160.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.912,
+     "bbox": [
+      0.4765,
+      0.003703,
+      0.3661,
+      0.8814
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000180.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.948,
+     "bbox": [
+      0.5,
+      0.01944,
+      0.3432,
+      0.8953
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000200.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.956,
+     "bbox": [
+      0.5484,
+      0.005555,
+      0.3864,
+      0.8805
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000220.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.939,
+     "bbox": [
+      0.5322,
+      0,
+      0.3156,
+      0.8611
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000240.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.942,
+     "bbox": [
+      0.5296,
+      0,
+      0.3208,
+      0.8611
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000260.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.947,
+     "bbox": [
+      0.5302,
+      0,
+      0.3197,
+      0.8601
+     ]
+    }
+   ]
+  },
+  {
+   "file": "../video-processed/shikaosu.mp4/frame000280.jpg",
+   "detections": [
+    {
+     "category": "1",
+     "conf": 0.945,
+     "bbox": [
+      0.5281,
+      0,
+      0.3239,
+      0.862
+     ]
+    }
+   ]
+  }
+ ],
+ "detection_categories": {
+  "1": "animal",
+  "2": "person",
+  "3": "vehicle"
+ },
+ "info": {
+  "detection_completion_time": "2024-05-31 06:46:21",
+  "format_version": "1.3",
+  "detector": "unknown",
+  "detector_metadata": {
+   "megadetector_version": "unknown",
+   "typical_detection_threshold": 0.5,
+   "conservative_detection_threshold": 0.25
+  }
+ }
+}
