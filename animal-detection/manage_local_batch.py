@@ -19,7 +19,7 @@ from tqdm import tqdm
 
 # Paths and job configuration
 video_name="karasu.mp4"
-input_path = r"C:\yamaneko-kenkyu\animal-detection\video-processed/"+ video_name
+input_path = "C:/yamaneko-kenkyu/animal-detection/video-processed/"+ video_name
 output_base = 'C:/yamaneko-kenkyu/animal-detection/postprocessing'
 organization_name_short = 'yamanekoinasaku'
 job_date = str(datetime.date.today())

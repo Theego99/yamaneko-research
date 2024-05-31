@@ -1,3 +1,8 @@
 the tuning of the confidence threshold for decididng whether there is or not an animal there was very important
 
 find the right balance between image quality resizing when turning video into frames and accuracy of model, also between day and night might differ
+
+trying to classify for cat vs other from trap camera footage makes such low accuray numbers that at the end it does not help decrease manual labor 
+
+it is better to set a freindly environment and tools for the people in the field to help them get the workflow correctly 
+

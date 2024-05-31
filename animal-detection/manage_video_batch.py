@@ -11,8 +11,8 @@ from collections import defaultdict
 from megadetector.utils import path_utils
 from megadetector.detection import video_utils
 
-input_folder = r"C:\yamaneko-kenkyu\dataset\trailcamerafootage"
-frame_folder_base = r'C:\yamaneko-kenkyu\animal-detection\video-processed'
+input_folder = r"C:/yamaneko-kenkyu/dataset/trailcamerafootage"
+frame_folder_base = r'C:/yamaneko-kenkyu/animal-detection/video-processed'
 
 os.makedirs(frame_folder_base, exist_ok=True)
 
