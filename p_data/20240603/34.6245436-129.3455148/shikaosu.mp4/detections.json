@@ -1,0 +1,242 @@
+[
+  {
+    "file": "frame000000.jpg",
+    "max_detection_conf": 0.936,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.936,
+        "bbox": [
+          0.5302,
+          0,
+          0.3343,
+          0.8601
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000020.jpg",
+    "max_detection_conf": 0.939,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.939,
+        "bbox": [
+          0.5307,
+          0,
+          0.3348,
+          0.862
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000040.jpg",
+    "max_detection_conf": 0.946,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.946,
+        "bbox": [
+          0.5312,
+          0,
+          0.3333,
+          0.8629
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000060.jpg",
+    "max_detection_conf": 0.943,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.943,
+        "bbox": [
+          0.5322,
+          0,
+          0.3307,
+          0.8629
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000080.jpg",
+    "max_detection_conf": 0.941,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.941,
+        "bbox": [
+          0.5328,
+          0,
+          0.3286,
+          0.8629
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000100.jpg",
+    "max_detection_conf": 0.97,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.97,
+        "bbox": [
+          0.476,
+          0,
+          0.3848,
+          0.8629
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000120.jpg",
+    "max_detection_conf": 0.948,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.948,
+        "bbox": [
+          0.5458,
+          0.002777,
+          0.3411,
+          0.862
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000140.jpg",
+    "max_detection_conf": 0.921,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.921,
+        "bbox": [
+          0.5328,
+          0.001851,
+          0.3265,
+          0.875
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000160.jpg",
+    "max_detection_conf": 0.912,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.912,
+        "bbox": [
+          0.4765,
+          0.003703,
+          0.3661,
+          0.8814
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000180.jpg",
+    "max_detection_conf": 0.948,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.948,
+        "bbox": [
+          0.5,
+          0.01944,
+          0.3432,
+          0.8953
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000200.jpg",
+    "max_detection_conf": 0.956,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.956,
+        "bbox": [
+          0.5484,
+          0.005555,
+          0.3864,
+          0.8805
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000220.jpg",
+    "max_detection_conf": 0.939,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.939,
+        "bbox": [
+          0.5322,
+          0,
+          0.3156,
+          0.8611
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000240.jpg",
+    "max_detection_conf": 0.942,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.942,
+        "bbox": [
+          0.5296,
+          0,
+          0.3208,
+          0.8611
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000260.jpg",
+    "max_detection_conf": 0.947,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.947,
+        "bbox": [
+          0.5302,
+          0,
+          0.3197,
+          0.8601
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000280.jpg",
+    "max_detection_conf": 0.945,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.945,
+        "bbox": [
+          0.5281,
+          0,
+          0.3239,
+          0.862
+        ]
+      }
+    ]
+  }
+]

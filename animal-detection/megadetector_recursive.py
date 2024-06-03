@@ -5,7 +5,7 @@ from megadetector.detection.run_detector_batch import load_and_run_detector_batc
 from megadetector.utils import path_utils
 
 # Paths and job configuration
-input_base_path = "C:/yamaneko-kenkyu/p_data/20240531"  # Base path to start recursion
+input_base = "C:/yamaneko-kenkyu/p_data/20240531"  # Base path to start recursion
 output_base = 'C:/yamaneko-kenkyu/p_data'
 model_file = 'MDV5A'
 
@@ -55,7 +55,7 @@ def process_images_in_directory(directory_path):
     print(f"Wrote results to {output_json}")
 
 #%% Traverse directories and process images
-for root, dirs, files in os.walk(input_base_path):
+for root, dirs, files in os.walk(input_base):
     for directory in dirs:
         directory_path = os.path.join(root, directory)
         # Check if the directory contains any images

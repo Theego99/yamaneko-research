@@ -1,0 +1,274 @@
+[
+  {
+    "file": "frame000000.jpg",
+    "max_detection_conf": 0.923,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.923,
+        "bbox": [
+          0.4039,
+          0.218,
+          0.2851,
+          0.6916
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000020.jpg",
+    "max_detection_conf": 0.954,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.954,
+        "bbox": [
+          0.2992,
+          0.193,
+          0.3359,
+          0.7833
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000040.jpg",
+    "max_detection_conf": 0.942,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.942,
+        "bbox": [
+          0.2398,
+          0.1638,
+          0.3484,
+          0.8055
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000060.jpg",
+    "max_detection_conf": 0.942,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.942,
+        "bbox": [
+          0.282,
+          0.1458,
+          0.2914,
+          0.8402
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000080.jpg",
+    "max_detection_conf": 0.916,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.916,
+        "bbox": [
+          0.3429,
+          0.1361,
+          0.2242,
+          0.8388
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000100.jpg",
+    "max_detection_conf": 0.94,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.94,
+        "bbox": [
+          0.3468,
+          0.1319,
+          0.2203,
+          0.8638
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000120.jpg",
+    "max_detection_conf": 0.951,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.951,
+        "bbox": [
+          0.2507,
+          0.1083,
+          0.3187,
+          0.8833
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000140.jpg",
+    "max_detection_conf": 0.95,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.95,
+        "bbox": [
+          0.2515,
+          0.1083,
+          0.3164,
+          0.8805
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000160.jpg",
+    "max_detection_conf": 0.949,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.949,
+        "bbox": [
+          0.2609,
+          0.1097,
+          0.3093,
+          0.8847
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000180.jpg",
+    "max_detection_conf": 0.948,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.948,
+        "bbox": [
+          0.2617,
+          0.1083,
+          0.3125,
+          0.8374
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000200.jpg",
+    "max_detection_conf": 0.951,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.951,
+        "bbox": [
+          0.2617,
+          0.1083,
+          0.2968,
+          0.8861
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000220.jpg",
+    "max_detection_conf": 0.963,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.963,
+        "bbox": [
+          0.2617,
+          0.1083,
+          0.2851,
+          0.8902
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000240.jpg",
+    "max_detection_conf": 0.941,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.941,
+        "bbox": [
+          0.3539,
+          0.1277,
+          0.171,
+          0.8722
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000260.jpg",
+    "max_detection_conf": 0.936,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.936,
+        "bbox": [
+          0.3585,
+          0.125,
+          0.1601,
+          0.875
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000280.jpg",
+    "max_detection_conf": 0.879,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.879,
+        "bbox": [
+          0.2984,
+          0.125,
+          0.146,
+          0.875
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000300.jpg",
+    "max_detection_conf": 0.944,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.944,
+        "bbox": [
+          0.3499,
+          0.09722,
+          0.207,
+          0.9013
+        ]
+      }
+    ]
+  },
+  {
+    "file": "frame000320.jpg",
+    "max_detection_conf": 0.919,
+    "detections": [
+      {
+        "category": "1",
+        "conf": 0.919,
+        "bbox": [
+          0.3468,
+          0.1055,
+          0.2726,
+          0.8944
+        ]
+      }
+    ]
+  }
+]
