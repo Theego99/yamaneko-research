@@ -6,6 +6,8 @@ trying to classify for cat vs other from trap camera footage makes such low accu
 
 it is better to set a friendly environment and tools for the people in the field to help them get the workflow correctly 
 
+thebdetection box was a bit too tight, sometimes even cutting pixels of the animal so we tested and concluded that widening the area by 5% was the best
+
 sorting for only the best frame in confidence score in order to save storage might not be the best because there being higher confidence does not 100% mean it is the best frame to identify the species
 
 rougly what percentage of birds and deer and boar do they get in the footage? also how does that percentage change between day and night?
