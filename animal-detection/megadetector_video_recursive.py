@@ -6,6 +6,7 @@ import json
 import torch
 from megadetector.utils import path_utils
 from megadetector.detection import video_utils
+import json
 from megadetector.detection.run_detector_batch import load_and_run_detector_batch
 
 # User sets the input_folder
@@ -40,8 +41,12 @@ def prompt_overwrite(path):
         response = input(f"'{path}' already exists. Do you want to overwrite it? (y/n): ").lower()
         if response in ['y', 'n']:
             return response == 'y'
-
-def split_videos():    
+    return True
+#動画をコマに分ける
+def split_videos():
+    if os.path.exists(tracking_file) and not prompt_overwrite(output_base):
+        print(f"Skipping saving video confidence tracking to '{output_base}'")
+        return    
     frame_filenames_by_video, fs_by_video, video_filenames = \
         video_utils.video_folder_to_frames(input_folder=input_folder,
                                            output_folder_base=output_base,
@@ -51,7 +56,7 @@ def split_videos():
                                            every_n_frames=every_n_frames,
                                            parallelization_uses_threads=parallelization_uses_threads)
     return frame_filenames_by_video, fs_by_video, video_filenames
-
+#コマをフォーマットの通りに保存
 def list_videos():
     frame_files = path_utils.find_images(output_base, True)
     frame_files = [s.replace('\\', '/') for s in frame_files]
@@ -70,7 +75,7 @@ def list_videos():
     print('Input folder contains {} videos'.format(len(video_filenames)))
 
     return video_filenames, folder_to_frame_files
-
+#コマに問題あるか確認
 def problem_check(video_filenames, folder_to_frame_files):
     missing_videos = [fn for fn in video_filenames if fn not in folder_to_frame_files]
     print('{} of {} folders are missing frames entirely'.format(len(missing_videos), len(video_filenames)))
@@ -82,7 +87,7 @@ def problem_check(video_filenames, folder_to_frame_files):
 
     print('Videos that could not be decoded:\n', '\n'.join(missing_videos))
     print('\nVideos with fewer than {} decoded frames:\n'.format(min_frames_for_valid_video), '\n'.join(low_frame_videos))
-
+#AIモデルを実行
 def run_megadetector(directory_path, every_n_frames):
     output_json = os.path.join(directory_path, 'detections.json')
     # Do not run MegaDetector if detection box file already exists
@@ -119,7 +124,7 @@ def run_megadetector(directory_path, every_n_frames):
     print(f"Wrote results to {output_json}")
 
     return results, all_images
-
+#認識結果を処理
 def process_detections(directory_path, results, all_images, every_n_frames):
     output_json = os.path.join(directory_path, 'detections.json')
     confidence_threshold = 0.7
@@ -172,7 +177,7 @@ def process_detections(directory_path, results, all_images, every_n_frames):
         print(f"Wrote results for the best frame to {output_json}")
     else:
         print("No frames had detections")
-
+#船頭がの動物認識情報をJsonに保存
 def save_video_confidence_dict():
     if os.path.exists(tracking_file) and not prompt_overwrite(tracking_file):
         print(f"Skipping saving video confidence tracking to '{tracking_file}'")
@@ -180,7 +185,7 @@ def save_video_confidence_dict():
     with open(tracking_file, 'w') as f:
         json.dump(video_confidence_dict, f, indent=2)
     print(f"Saved video confidence tracking to {tracking_file}")
-
+#認識できなかった動画のみAIモデルを再実行
 def split_videos_with_new_interval(directory_path, new_every_n_frames):
     print(f"Splitting videos with a new frame interval of {new_every_n_frames}")
     video_filenames,fs_by_video = \
@@ -188,8 +193,8 @@ def split_videos_with_new_interval(directory_path, new_every_n_frames):
                                            output_folder=directory_path.replace('data','p_data'),
                                            overwrite=True,
                                            every_n_frames=new_every_n_frames)
-
-def draw_detections_on_frame(frame_path, detections):
+#detectionボックスを描画
+def draw_detections_on_frame(frame_path, detections_json):
     """
     Draws detections on the frame.
 
@@ -201,6 +206,8 @@ def draw_detections_on_frame(frame_path, detections):
 
         # Example usage
     frame_path = "path/to/frame.jpg"
+    detections_json = "path/to/detections.json"
+
     detections = [
         {'bbox': [50, 50, 100, 150], 'confidence': 0.95},
         {'bbox': [200, 200, 120, 180], 'confidence': 0.85}
@@ -209,24 +216,38 @@ def draw_detections_on_frame(frame_path, detections):
     draw_detections_on_frame(frame_path, detections)
 
     """
+
+    # Open and read the JSON file
+    with open(detections_json, 'r') as file:
+        detections = json.load(file)[0]['detections']
+    
+
     # Load the image
     image = cv2.imread(frame_path)
-    
+        
     if image is None:
-        print(f"Could not load image {frame_path}")
-        return
+            print(f"Could not load image {frame_path}")
+            return
 
     for detection in detections:
         bbox = detection['bbox']
-        confidence = detection['confidence']
+        print(bbox)
+        confidence = detection['conf']
         
-        # Extract the coordinates
-        x_min, y_min, width, height = bbox
-        x_max = x_min + width
-        y_max = y_min + height
+        # Extract the image dimensions
+        height, width, _ = image.shape
+
+        # Extract the coordinates (assuming bbox contains [x_min, y_min, width, height] in percentages)
+        x_min, y_min, bbox_width, bbox_height = bbox
+
+        # Convert percentages to pixel values
+        x_min_pixel = int(x_min * width)
+        y_min_pixel = int(y_min * height)
+        x_max_pixel = int((x_min + bbox_width) * width)
+        y_max_pixel = int((y_min + bbox_height) * height)
 
         # Draw the bounding box
-        cv2.rectangle(image, (int(x_min), int(y_min)), (int(x_max), int(y_max)), (0, 255, 0), 2)
+        cv2.rectangle(image, (x_min_pixel, y_min_pixel), (x_max_pixel, y_max_pixel), (0, 255, 0), 2)
         
         # Put the confidence score
         label = f'{confidence:.2f}'
@@ -238,25 +259,26 @@ def draw_detections_on_frame(frame_path, detections):
     print(f"Saved image with detections to {output_path}")
 
 def main():
-    split_videos()
-    video_filenames, folder_to_frame_files = list_videos()
-    problem_check(video_filenames, folder_to_frame_files)
+    # split_videos()
+    # video_filenames, folder_to_frame_files = list_videos()
+    # problem_check(video_filenames, folder_to_frame_files)
     
-    for root, dirs, files in os.walk(output_base):
-        for directory in dirs:
-            directory_path = os.path.join(root, directory)
-            print(f"Processing directory: {directory_path}")
-            jpeg_files = path_utils.find_images(directory_path, recursive=False, convert_slashes=True)
-            if jpeg_files:
-                results, all_images = run_megadetector(directory_path, every_n_frames)
-                if results and all_images:
-                    process_detections(directory_path, results, all_images, every_n_frames)
-                else:
-                    print(f"Skipping processing for {directory_path} as MegaDetector did not run.")
-            else:
-                print(f"No images found in {directory_path}")
+    # for root, dirs, files in os.walk(output_base):
+    #     for directory in dirs:
+    #         directory_path = os.path.join(root, directory)
+    #         print(f"Processing directory: {directory_path}")
+    #         jpeg_files = path_utils.find_images(directory_path, recursive=False, convert_slashes=True)
+    #         if jpeg_files:
+    #             results, all_images = run_megadetector(directory_path, every_n_frames)
+    #             if results and all_images:
+    #                 process_detections(directory_path, results, all_images, every_n_frames)
+    #             else:
+    #                 print(f"Skipping processing for {directory_path} as MegaDetector did not run.")
+    #         else:
+    #             print(f"No images found in {directory_path}")
 
-    save_video_confidence_dict()
+    # save_video_confidence_dict()
+    draw_detections_on_frame("C:\yamaneko-kenkyu\p_data/30052024/34.6225665-129.3414982\karasu.mp4/frame000000.jpg","C:\yamaneko-kenkyu\p_data/30052024/34.6225665-129.3414982\karasu.mp4\detections.json")
 
 if __name__ == "__main__":
     main()
