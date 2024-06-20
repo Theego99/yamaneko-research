@@ -3,7 +3,7 @@ import json
 from PIL import Image
 
 # Define the base path for the input images and JSON file
-input_base_path = r"C:\yamaneko-kenkyu\p_data\20240531\34.6245436-129.3455148\tsushimaten.mp4"
+input_base_path = r"C:/yamaneko-kenkyu/p_data/20240531/34.6245436-129.3455148/tsushimaten.mp4"
 json_file_path = os.path.join(input_base_path, "detections.json")
 
 # Load the JSON file

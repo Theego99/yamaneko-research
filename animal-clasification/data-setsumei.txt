@@ -1,0 +1,4 @@
+taxonomy csv contains species and animal names for each animal that appears in every lila dataset
+
+wildlife mapping, the wi_guid is the id to look for the exact species in https://wildlifeinsights-taxonomy-ewutmovdfa-uc.a.run.app/
+

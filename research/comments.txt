@@ -11,3 +11,7 @@ thebdetection box was a bit too tight, sometimes even cutting pixels of the anim
 sorting for only the best frame in confidence score in order to save storage might not be the best because there being higher confidence does not 100% mean it is the best frame to identify the species
 
 rougly what percentage of birds and deer and boar do they get in the footage? also how does that percentage change between day and night?
+
+
+decided not to include any other similar to deer genus since there were plenty enough of cervus data, same for sus and rat, but for the priolinarus and for the non mammal animals we decided to include some similar animals in tha dataset as well
+
