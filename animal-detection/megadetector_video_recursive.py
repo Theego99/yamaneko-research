@@ -9,14 +9,14 @@ from megadetector.detection import video_utils
 import json
 from megadetector.detection.run_detector_batch import load_and_run_detector_batch
 
-# User sets the input_folder
+# 入力ディレクトリはユーザーが決める
 input_folder = r"C:/Users\dalca/OneDrive - nkz.ac.jp/Escritorio/test\data"  # 処理したい動画の回収日パス
 
 # Derive output_base and tracking_file from input_folder
 output_base = input_folder.replace("data", "p_data")
 tracking_file = os.path.join(output_base, 'video_confidence_tracking.json')
 
-# Create the output directory if it does not exist
+# 出力ディレクトリを作成
 if not os.path.exists(output_base):
     os.makedirs(output_base)
 
@@ -29,7 +29,7 @@ parallelization_uses_threads = True
 n_threads = 8
 confidence_threshold = 0.5
 
-# Load existing tracking data if it exists
+# データを読み込む
 if os.path.exists(tracking_file):
     with open(tracking_file, 'r') as f:
         video_confidence_dict = json.load(f)
