@@ -14,18 +14,11 @@ from collections import defaultdict
 from megadetector.data_management.lila.lila_common import \
      is_empty
 
-lila_base_urls = {
-    'azure':'https://lilawildlife.blob.core.windows.net/lila-wildlife/ena24',
-    'gcp':'https://storage.googleapis.com/public-datasets-lila/ena24',
-    'aws':'http://us-west-2.opendata.source.coop.s3.amazonaws.com/agentmorris/lila-wildlife/ena24'
-}
-
 # If any of these strings appear in the common name of a species, we'll download that image
 species_of_interest = ['prionailurus bengalensis']
 
 # We'll write images, metadata downloads, and temporary files here
 lila_local_base = 'C:/lila'
-
 metadata_dir = os.path.join(lila_local_base,'metadata')
 os.makedirs(metadata_dir,exist_ok=True)
 
@@ -58,14 +51,14 @@ def find_items(row):
     
     if match:
         ds_name_to_urls[row['dataset_name']].append(row['url_' + preferred_provider])
+
 tqdm.pandas()
 _ = df.progress_apply(find_items,axis=1)
+
 # We have a list of URLs for each dataset, flatten them all into a list of URLs
 all_urls = list(ds_name_to_urls.values())
 all_urls = [item for sublist in all_urls for item in sublist]
 print('Found {} matching URLs across {} datasets'.format(len(all_urls),len(ds_name_to_urls)))
-
-
 
 for common_name in common_name_to_count:
     print('{}: {}'.format(common_name,common_name_to_count[common_name]))
@@ -73,20 +66,15 @@ for common_name in common_name_to_count:
 from copy import deepcopy
 ds_name_to_urls_raw = deepcopy(ds_name_to_urls)
 
-
 # %% Optionally trim to a fixed number of URLs per dataset
 
-if max_images_per_dataset is None:
-    pass
-else:
+if max_images_per_dataset is not None:
     # ds_name = next(iter(ds_name_to_urls.keys()))
     for ds_name in ds_name_to_urls:
         if len(ds_name_to_urls[ds_name]) > max_images_per_dataset:
             ds_name_to_urls[ds_name] = random.sample(ds_name_to_urls[ds_name],max_images_per_dataset)
 
-
 # %% Choose target files for each URL
-
 from megadetector.data_management.lila.lila_common import lila_base_urls
 
 # We have a list of URLs per dataset, flatten that into a single list of URLs
@@ -103,6 +91,7 @@ urls_to_download = sorted(list(urls_to_download))
 # ...so we need to remove the base URL to get the target file.
 
 base_url = lila_base_urls[preferred_provider]
+print(base_url)
 assert base_url.endswith('/')
 url_to_target_file = {}
 for url in urls_to_download:
@@ -110,6 +99,7 @@ for url in urls_to_download:
     target_fn_relative = url.replace(base_url,'')
     target_fn_abs = os.path.join(output_dir,target_fn_relative)
     url_to_target_file[url] = target_fn_abs
+    
 # Download image files
 download_results = parallel_download_urls(
     url_to_target_file=url_to_target_file,
