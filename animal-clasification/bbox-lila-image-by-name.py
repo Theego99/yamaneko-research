@@ -11,10 +11,18 @@ from collections import defaultdict
 from urllib.parse import urlparse
 from megadetector.utils.url_utils import parallel_download_urls
 from megadetector.data_management.lila.lila_common import is_empty
-
+'''
+suidae        389702
+cervidae      186592 
+felidae       135463 (Using all the prionailurus bengalisis and the rest use similar cats)
+mustelidae    120260
+muridae         4879 (using wellington ones)
+soricidae         50 (not using this because of lack of precision)
+'''
 # Species of interest
-species_of_interest = ['felidae']
-taxonomy_rank = 'family'
+species_of_interest = ['prionailurus bengalensis']
+taxonomy_rank = 'scientific_name'
+
 # Local directories
 lila_local_base = 'C:/lila'
 metadata_dir = os.path.join(lila_local_base, 'metadata')
@@ -27,10 +35,14 @@ os.makedirs(output_dir, exist_ok=True)
 output_contour_dir = os.path.join(output_dir, species_of_interest[0].replace(' ', '_'))
 os.makedirs(output_contour_dir, exist_ok=True)
 
+# Directory to save cropped bounding boxes
+output_crops_dir = os.path.join(output_contour_dir, 'crops')
+os.makedirs(output_crops_dir, exist_ok=True)
+
 # Number of concurrent download threads
 n_download_threads = 100
-max_images_per_dataset = 10  # None
-preferred_provider = 'gcp'  # 'azure', 'gcp', 'aws'
+max_images_per_dataset = None #None
+preferred_provider = 'gcp'
 
 # Open parquet file
 df = pd.read_parquet("C:/lila/metadata/lila_image_urls_and_labels_filtered1.parquet")
@@ -114,18 +126,51 @@ bbox_url_column = 'mdv5b_results_raw'
 # Normalize the dataset names in the DataFrame
 bbox_df[dataset_column] = bbox_df[dataset_column].str.lower().str.replace(' ', '-')
 
-# Create a function to draw bounding boxes
-def draw_bounding_boxes(image_path, bboxes):
+# Create a function to draw bounding boxes with confidence scores and save crops
+def draw_bounding_boxes_and_save_crops(image_path, bboxes):
     image = cv2.imread(image_path)
-    for bbox in bboxes:
-        if bbox['conf'] >= 0.8:  # Filter by confidence
+    img_height, img_width = image.shape[:2]
+    boxes_drawn = False
+    
+    for i, bbox in enumerate(bboxes):
+        if bbox['conf'] >= 0.15:  # Filter by confidence
             x, y, w, h = bbox['bbox']
-            x = int(x * image.shape[1])
-            y = int(y * image.shape[0])
-            w = int(w * image.shape[1])
-            h = int(h * image.shape[0])
+            x = int(x * img_width)
+            y = int(y * img_height)
+            w = int(w * img_width)
+            h = int(h * img_height)
+            
+            # Expand the bounding box
+            x_center = x + w / 2
+            y_center = y + h / 2
+            w = int(w * 1.1)
+            h = int(h * 1.1)
+            x = int(x_center - w / 2)
+            y = int(y_center - h / 2)
+            
+            # Ensure the bounding box is within the image bounds
+            x = max(0, x)
+            y = max(0, y)
+            w = min(w, img_width - x)
+            h = min(h, img_height - y)
+            
+            # Save the cropped image before drawing the box
+            crop = image[y:y + h, x:x + w]
+            crop_filename = os.path.join(output_crops_dir, f"{os.path.basename(image_path).split('.')[0]}_crop_{i}.jpg")
+            cv2.imwrite(crop_filename, crop)
+            
+
+            #draw and saved the bbox by uncommenting this
+            '''
+            conf = bbox['conf']
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-    return image
+            # Add the confidence score on top of the bounding box
+            cv2.putText(image, f'{conf:.2f}', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            boxes_drawn = True
+
+            '''
+
+    return image, boxes_drawn
 
 # Process each dataset
 for ds_name, urls in ds_name_to_urls.items():
@@ -167,9 +212,10 @@ for ds_name, urls in ds_name_to_urls.items():
         print(f"Image ID: {image_file}, Bounding boxes found: {len(bboxes)}")  # Debug print
         if bboxes:
             for bbox in bboxes:
-                image_with_boxes = draw_bounding_boxes(image_path, bbox['detections'])
-                # Save all images in the single directory with the name of the animal
-                output_path = os.path.join(output_contour_dir, os.path.basename(image_path))
-                cv2.imwrite(output_path, image_with_boxes)
+                image_with_boxes, boxes_drawn = draw_bounding_boxes_and_save_crops(image_path, bbox['detections'])
+                if boxes_drawn:
+                    # Save all images in the single directory with the name of the animal
+                    output_path = os.path.join(output_contour_dir, os.path.basename(image_path))
+                    cv2.imwrite(output_path, image_with_boxes)
 
 print("Processing complete.")

@@ -27,7 +27,7 @@ recursive = True
 overwrite = True
 parallelization_uses_threads = True
 n_threads = 8
-confidence_threshold = 0.5
+confidence_threshold = 0.2
 
 # データを読み込む
 if os.path.exists(tracking_file):
