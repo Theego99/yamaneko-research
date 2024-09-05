@@ -20,8 +20,8 @@ muridae         4879 (using wellington ones)
 soricidae         50 (not using this because of lack of precision)
 '''
 # Species of interest
-species_of_interest = ['prionailurus bengalensis']
-taxonomy_rank = 'scientific_name'
+species_of_interest = ['muridae']
+taxonomy_rank = 'family'
 
 # Local directories
 lila_local_base = 'C:/lila'
@@ -41,7 +41,7 @@ os.makedirs(output_crops_dir, exist_ok=True)
 
 # Number of concurrent download threads
 n_download_threads = 100
-max_images_per_dataset = None #None
+max_images_per_dataset = 100 #None
 preferred_provider = 'gcp'
 
 # Open parquet file

@@ -1,15 +1,15 @@
 [
   {
-    "file": "frame000080.jpg",
-    "max_detection_conf": 0.961,
+    "file": "frame000080_detections.jpg",
+    "max_detection_conf": 0.966,
     "detections": [
       {
         "category": "1",
-        "conf": 0.961,
+        "conf": 0.966,
         "bbox": [
           0.3992,
-          0,
-          0.5414,
+          0.001388,
+          0.5406,
           0.4958
         ]
       }

@@ -8,9 +8,17 @@ from megadetector.utils import path_utils
 from megadetector.detection import video_utils
 import json
 from megadetector.detection.run_detector_batch import load_and_run_detector_batch
+import numpy as np
+import tensorflow as tf
+
+# Load the binary classification model
+classification_model = tf.keras.models.load_model('../animal-clasification/animal_classifier_binary_model.h5')
+
+# Define the class names for binary classification
+class_names = ['other', 'bird']
 
 # 入力ディレクトリはユーザーが決める
-input_folder = r"C:/Users\dalca/OneDrive - nkz.ac.jp/Escritorio/test\data"  # 処理したい動画の回収日パス
+input_folder = r"C:/yamaneko-kenkyu\data"  # 処理したい動画の回収日パス
 
 # Derive output_base and tracking_file from input_folder
 output_base = input_folder.replace("data", "p_data")
@@ -27,7 +35,7 @@ recursive = True
 overwrite = True
 parallelization_uses_threads = True
 n_threads = 8
-confidence_threshold = 0.2
+confidence_threshold = 0.8
 
 # データを読み込む
 if os.path.exists(tracking_file):
@@ -195,72 +203,96 @@ def save_video_confidence_dict():
 #認識できなかった動画のみAIモデルを再実行
 def split_videos_with_new_interval(directory_path, new_every_n_frames):
     print(f"Splitting videos with a new frame interval of {new_every_n_frames}")
-    video_filenames,fs_by_video = \
+    video_filenames, fs_by_video = \
         video_utils.video_to_frames(input_video_file=directory_path,
-                                           output_folder=directory_path.replace('data','p_data'),
-                                           overwrite=True,
-                                           every_n_frames=new_every_n_frames)
+                                    output_folder=directory_path.replace('data','p_data'),
+                                    overwrite=True,
+                                    every_n_frames=new_every_n_frames)
 
-#detectionボックスを描画
+# Crop image based on bounding box
+def crop_image_with_bbox(image_path, bbox):
+    """
+    Crops the image based on the bounding box and returns the cropped image.
+    """
+    image = cv2.imread(image_path)
+    if image is None:
+        print(f"Could not load image {image_path}")
+        return None
+
+    height, width, _ = image.shape
+    x_min, y_min, bbox_width, bbox_height = bbox
+
+    x_min_pixel = int(x_min * width)
+    y_min_pixel = int(y_min * height)
+    x_max_pixel = int((x_min + bbox_width) * width)
+    y_max_pixel = int((y_min + bbox_height) * height)
+
+    cropped_image = image[y_min_pixel:y_max_pixel, x_min_pixel:x_max_pixel]
+    return cropped_image
+
+# Run binary classification on the cropped image
+def classify_cropped_image(cropped_image):
+    """
+    Classifies the cropped image using the binary classification model.
+    """
+    if cropped_image is None:
+        return None, None
+
+    img = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
+    img = cv2.resize(img, (150, 150))
+    img = img.astype('float32') / 255.0
+    img = np.expand_dims(img, axis=-1)
+    img = np.expand_dims(img, axis=0)
+
+    predictions = classification_model.predict(img)
+    predicted_class = 1 if predictions[0] > 0.5 else 0
+    return class_names[predicted_class], predictions[0]
+
+# Detectionボックスを描画
 def draw_detections_on_frame(frame_path):
     """
-    Draws detections on the frame.
+    Draws detections on the frame and crops the detected regions.
+    Classifies each cropped region using the binary classification model.
 
     Parameters:
     - frame_path: Path to the frame image.
-    - detections: List of detections to be drawn, where each detection is a dictionary
-                  containing 'bbox' (bounding box) and 'confidence' (confidence score).
-                  The 'bbox' should be in the format [x_min, y_min, width, height].
-
-        # Example usage
-    frame_path = "path/to/frame.jpg"
-    detections_json = "path/to/detections.json"
-
-    detections = [
-        {'bbox': [50, 50, 100, 150], 'confidence': 0.95},
-        {'bbox': [200, 200, 120, 180], 'confidence': 0.85}
-    ]
-
-    draw_detections_on_frame(frame_path, detections)
-
     """
-    detections_json = os.path.dirname(frame_path)+'/detections.json'
-    # Open and read the JSON file
+    detections_json = os.path.dirname(frame_path) + '/detections.json'
     with open(detections_json, 'r') as file:
         detections = json.load(file)[0]['detections']
-    
 
-    # Load the image
     image = cv2.imread(frame_path)
-        
     if image is None:
-            print(f"Could not load image {frame_path}")
-            return
+        print(f"Could not load image {frame_path}")
+        return
 
     for detection in detections:
         bbox = detection['bbox']
         confidence = detection['conf']
         if confidence > confidence_threshold:
-            # Extract the image dimensions
             height, width, _ = image.shape
-
-            # Extract the coordinates (assuming bbox contains [x_min, y_min, width, height] in percentages)
             x_min, y_min, bbox_width, bbox_height = bbox
+            x_min_pixel = int(x_min * width)
+            y_min_pixel = int(y_min * height)
+            x_max_pixel = int((x_min + bbox_width) * width)
+            y_max_pixel = int((y_min + bbox_height) * height)
 
-            # Convert percentages to pixel values
-            x_min_pixel = int(x_min * width*0.95)
-            y_min_pixel = int(y_min * height*0.95)
-            x_max_pixel = int((x_min + bbox_width) * width*1.05)
-            y_max_pixel = int((y_min + bbox_height) * height*1.05)
-
-            # Draw the bounding box
             cv2.rectangle(image, (x_min_pixel, y_min_pixel), (x_max_pixel, y_max_pixel), (20, 0, 255), 2)
-            
-            # Put the confidence score
             label = f'{confidence:.2f}'
-            cv2.putText(image, label, (int(x_min_pixel), int(y_min_pixel) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+            cv2.putText(image, label, (x_min_pixel, y_min_pixel - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
 
-    # Save the image with detections
+            cropped_image = crop_image_with_bbox(frame_path, bbox)
+            predicted_class, probability = classify_cropped_image(cropped_image)
+            if predicted_class:
+                probability = float(probability[0])  # Convert NumPy array to float
+                print(f"Classified as: {predicted_class} with probability: {probability:.5f}")
+                
+                # Save the cropped image with classification result as file name
+                cropped_image_filename = f"{predicted_class}_{probability:.2f}.jpg"
+                cropped_image_path = os.path.join(os.path.dirname(frame_path), cropped_image_filename)
+                cv2.imwrite(cropped_image_path, cropped_image)
+                print(f"Saved cropped image to {cropped_image_path}")
+
     output_path = frame_path.replace('.jpg', '_detections.jpg')
     cv2.imwrite(output_path, image)
     print(f"Saved image with detections to {output_path}")
@@ -270,13 +302,8 @@ def main():
     video_filenames, folder_to_frame_files = list_videos()
     problem_check(video_filenames, folder_to_frame_files)
     
-    #output_base : data
-    #dirs : folders under base (coordenates)
-    #root : after the date folder it keeps crawling through all
     for root, dirs, files in os.walk(output_base):
-        #directory : every dir in dirs
         for directory in dirs:
-
             directory_path = os.path.join(root, directory)
             print(f"Processing directory: {directory_path}")
             jpeg_files = path_utils.find_images(directory_path, recursive=False, convert_slashes=True)
@@ -285,10 +312,8 @@ def main():
                 results, all_images = run_megadetector(directory_path, every_n_frames)
                 if results and all_images:
                     process_detections(directory_path, results, all_images, every_n_frames)
-                    #check for existence of jpeg files after processing
                     jpeg_files = path_utils.find_images(directory_path, recursive=False, convert_slashes=True)
                     if jpeg_files:
-                        #draw detection box onto frame
                         draw_detections_on_frame(jpeg_files[0])
                 else:
                     print(f"Skipping processing for {directory_path} as MegaDetector did not run.")
@@ -299,4 +324,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

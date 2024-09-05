@@ -1,16 +1,16 @@
 [
   {
-    "file": "frame000000.jpg",
-    "max_detection_conf": 0.927,
+    "file": "frame000000_detections.jpg",
+    "max_detection_conf": 0.932,
     "detections": [
       {
         "category": "1",
-        "conf": 0.927,
+        "conf": 0.932,
         "bbox": [
-          0.6789,
-          0.8291,
-          0.2757,
-          0.1694
+          0.682,
+          0.8375,
+          0.271,
+          0.1569
         ]
       }
     ]
