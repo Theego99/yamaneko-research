@@ -15,7 +15,7 @@ import tensorflow as tf
 classification_model = tf.keras.models.load_model('../animal-clasification/animal_classifier_binary_model.h5')
 
 # Define the class names for binary classification
-class_names = ['other', 'bird']
+class_names = ['bird', 'other']
 
 # 入力ディレクトリはユーザーが決める
 input_folder = r"C:/yamaneko-kenkyu\data"  # 処理したい動画の回収日パス
@@ -285,6 +285,10 @@ def draw_detections_on_frame(frame_path):
             predicted_class, probability = classify_cropped_image(cropped_image)
             if predicted_class:
                 probability = float(probability[0])  # Convert NumPy array to float
+
+                #threshold for bird clasification
+                if probability <= 0.75:
+                    predicted_class = 'bird'
                 print(f"Classified as: {predicted_class} with probability: {probability:.5f}")
                 
                 # Save the cropped image with classification result as file name
