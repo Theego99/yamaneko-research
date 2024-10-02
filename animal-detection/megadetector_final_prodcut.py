@@ -18,7 +18,7 @@ classification_model = tf.keras.models.load_model('../animal-clasification/anima
 class_names = ['tori', 'honyurui']
 
 # 入力ディレクトリはユーザーが決める
-input_folder = r"D:/ディエゴさんへ提供/色々映っている動画"  # 処理したい動画の回収日パス
+input_folder = r"D:/ディエゴさんへ提供/0620-0627カメラ１(ヤマネコ、鳥あり)"  # 処理したい動画の回収日パス
 
 # Derive output_base and tracking_file from input_folder
 output_base = input_folder+"_processed"
