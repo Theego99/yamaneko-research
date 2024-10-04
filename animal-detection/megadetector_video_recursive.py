@@ -18,7 +18,7 @@ classification_model = tf.keras.models.load_model('../animal-clasification/anima
 class_names = ['tori', 'honyurui']
 
 # 入力ディレクトリはユーザーが決める
-input_folder = r"D:/ディエゴさんへ提供/色々映っている動画"  # 処理したい動画の回収日パス
+input_folder = r"D:/ディエゴさんへ提供/0620-0627カメラ２(ヤマネコ、鳥あり)"  # 処理したい動画の回収日パス
 
 # Derive output_base and tracking_file from input_folder
 output_base = input_folder+"_processed"
@@ -30,7 +30,7 @@ if not os.path.exists(output_base):
 
 model_file = 'MDV5A'
 
-every_n_frames = 20
+every_n_frames = 30
 recursive = True
 overwrite = True
 parallelization_uses_threads = True
@@ -141,39 +141,39 @@ def run_megadetector(directory_path, every_n_frames):
 #認識結果を処理
 def process_detections(directory_path, results, all_images, every_n_frames):
     output_json = os.path.join(directory_path, 'detections.json')
-    min_frames_interval = 9  # Minimum frame interval to prevent infinite recursion. maybe allow user to change this value by 2x it as many times as they want
 
-    # Track highest confidence score and check if any detection exceeds 0.15
+    # Initialize variables
     max_confidence = 0
     best_frame = None
     best_frame_results = None
     detection_above_threshold = False
+    category_one_detected = False  # New variable to track category '1' detections
 
     for result in results:
+        # Update max confidence and best frame
         if 'max_detection_conf' in result and result['max_detection_conf'] > max_confidence:
             max_confidence = result['max_detection_conf']
             best_frame = result['file']
             best_frame_results = result
+        
+        # Check if any detection exceeds the confidence threshold
         if 'max_detection_conf' in result and result['max_detection_conf'] > confidence_threshold:
             detection_above_threshold = True
 
+        # Check each detection in the result
+        for detection in result.get('detections', []):
+            # Check if the detection is of category '1' and exceeds the threshold
+            if detection['category'] == '1' and detection['conf'] > confidence_threshold:
+                category_one_detected = True
+
+    # Update the video confidence dictionary
     video_path = os.path.relpath(directory_path, output_base).replace('\\', '/')
     video_confidence_dict[video_path] = max_confidence
 
-    # If no detection exceeds the threshold, triple the frames and run again
-    if not detection_above_threshold and every_n_frames > min_frames_interval:
-        new_every_n_frames = every_n_frames // 3
-        print(f"Tripling frames and re-running detector for {directory_path} with new interval: {new_every_n_frames}")
-        split_videos_with_new_interval(directory_path + "_processed", new_every_n_frames)
-        results, all_images = run_megadetector(directory_path, new_every_n_frames)
-        if results:
-            process_detections(directory_path, results, all_images, new_every_n_frames)
-        return
-
-    # Delete all frames and the folder if no detection exceeds the threshold
-    if not detection_above_threshold:
+    # Delete frames and folder if no detection exceeds threshold or category is not '1'
+    if not detection_above_threshold or not category_one_detected:
         shutil.rmtree(directory_path)
-        print(f"Deleted all frames and folder '{directory_path}' as no detections exceeded the confidence threshold of {confidence_threshold}")
+        print(f"Deleted all frames and folder '{directory_path}' because no detections of category '1' exceeded the confidence threshold of {confidence_threshold}")
         return
 
     # Keep only the frame with the highest confidence score and delete the rest
@@ -182,7 +182,7 @@ def process_detections(directory_path, results, all_images, every_n_frames):
             if os.path.basename(image) != os.path.basename(best_frame):
                 os.remove(image)
         print(f"Kept only the frame with the highest confidence: {best_frame}")
-        
+
         # Write results to file with the best frame's detections only
         best_frame_results['file'] = os.path.basename(best_frame)
         with open(output_json, 'w') as f:
@@ -205,7 +205,7 @@ def split_videos_with_new_interval(directory_path, new_every_n_frames):
     print(f"Splitting videos with a new frame interval of {new_every_n_frames}")
     video_filenames, fs_by_video = \
         video_utils.video_to_frames(input_video_file=directory_path,
-                                    output_folder=directory_path + "_processed",
+                                    output_folder=directory_path,
                                     overwrite=True,
                                     every_n_frames=new_every_n_frames)
 
@@ -316,15 +316,23 @@ def main():
                 results, all_images = run_megadetector(directory_path, every_n_frames)
                 if results and all_images:
                     process_detections(directory_path, results, all_images, every_n_frames)
-                    jpeg_files = path_utils.find_images(directory_path, recursive=False, convert_slashes=True)
-                    if jpeg_files:
-                        draw_detections_on_frame(jpeg_files[0])
+                    
+                    # Check if the directory still exists
+                    if os.path.exists(directory_path):
+                        jpeg_files = path_utils.find_images(directory_path, recursive=False, convert_slashes=True)
+                        if jpeg_files:
+                            draw_detections_on_frame(jpeg_files[0])
+                        else:
+                            print(f"No images found in {directory_path}")
+                    else:
+                        print(f"Directory {directory_path} has been deleted.")
                 else:
                     print(f"Skipping processing for {directory_path} as MegaDetector did not run.")
             else:
                 print(f"No images found in {directory_path}")
 
-    save_video_confidence_dict()
+
+    save_video_confidence_dict()    
 
 if __name__ == "__main__":
     main()
