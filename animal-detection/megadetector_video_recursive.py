@@ -18,7 +18,7 @@ classification_model = tf.keras.models.load_model('../animal-clasification/anima
 class_names = ['tori', 'honyurui']
 
 # 入力ディレクトリはユーザーが決める
-input_folder = r"D:/ディエゴさんへ提供/0620-0627カメラ２(ヤマネコ、鳥あり)"  # 処理したい動画の回収日パス
+input_folder = r"D:\DCIM/100BMCIM"  # 処理したい動画の回収日パス
 
 # Derive output_base and tracking_file from input_folder
 output_base = input_folder+"_processed"
@@ -30,12 +30,12 @@ if not os.path.exists(output_base):
 
 model_file = 'MDV5A'
 
-every_n_frames = 30
+every_n_frames = 33
 recursive = True
 overwrite = True
 parallelization_uses_threads = True
 n_threads = 8
-confidence_threshold = 0.8
+confidence_threshold = 0.3
 
 # データを読み込む
 if os.path.exists(tracking_file):
