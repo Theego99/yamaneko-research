@@ -1,0 +1,15 @@
+altgraph==0.17.4
+imageio==2.35.1
+macholib==1.16.3
+modulegraph==0.19.6
+numpy==2.1.2
+opencv-python==4.10.0.84
+packaging==24.1
+pefile==2024.8.26
+pillow==10.4.0
+py2app==0.28.8
+pyinstaller==6.10.0
+pyinstaller-hooks-contrib==2024.8
+python-vlc==3.0.21203
+pywin32-ctypes==0.2.3
+tifffile==2024.9.20
