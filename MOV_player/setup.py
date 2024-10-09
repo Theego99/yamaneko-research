@@ -1,6 +1,6 @@
 from setuptools import setup
 
-APP = ['src/player.py']  # Path to your main script
+APP = ['src/DiegoMOV_player.py']  # Path to your main script
 DATA_FILES = ['assets/app_icon.icns']  # Include assets if necessary
 OPTIONS = {
     'argv_emulation': True,
