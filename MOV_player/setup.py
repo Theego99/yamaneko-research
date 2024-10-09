@@ -13,6 +13,7 @@ OPTIONS = {
     'iconfile': 'assets/app_icon.icns',
     'plist': {
         'CFBundleName': 'DiegoMOV Player',
+        ''
         'CFBundleShortVersionString': '1.1',
         'CFBundleVersion': '1.1',
         'CFBundleIdentifier': 'com.yourdomain.diegomovplayer',
