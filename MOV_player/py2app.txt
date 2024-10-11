@@ -1,0 +1,19 @@
+your_application/
+├── your_script.py
+├── setup.py
+├── assets/
+│   └── app_icon.icns
+└── vlc/
+    ├── libvlc.dylib
+    ├── libvlccore.dylib
+    └── plugins/
+        ├── access/
+        ├── audio_filter/
+        └── ... (other plugin folders)
+
+
+
+
+python setup.py py2app
+
+
