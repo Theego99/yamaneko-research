@@ -52,7 +52,7 @@ except Exception as e:
 import vlc
 
 # Proceed with the rest of your imports
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QFileDialog,
@@ -91,6 +91,11 @@ class VideoPlayer(QtWidgets.QMainWindow):
                 base_path = os.path.dirname(os.path.abspath(__file__))
                 logging.debug("Running in development mode.")
 
+                    # Path to the icon file
+            icon_path = os.path.join(base_path, 'assets/app_icon.ico')
+            
+            # Set the window icon
+            self.setWindowIcon(QtGui.QIcon(icon_path))
             # Path to VLC directory
             vlc_path = os.path.join(base_path, 'vlc')  # 'vlc' matches the spec file
             logging.debug(f"VLC path set to: {vlc_path}")
@@ -167,7 +172,7 @@ class VideoPlayer(QtWidgets.QMainWindow):
 
             # Set up UI components
             self.init_ui()
-            
+
             # Handle command-line arguments
             if len(sys.argv) > 1:
                 file_path = sys.argv[1]
@@ -346,6 +351,19 @@ class VideoPlayer(QtWidgets.QMainWindow):
 if __name__ == "__main__":
     try:
         app = QtWidgets.QApplication(sys.argv)
+        
+        # Determine the base path
+        if getattr(sys, 'frozen', False):
+            base_path = sys._MEIPASS
+        else:
+            base_path = os.path.dirname(os.path.abspath(__file__))
+        
+        # Path to the icon file
+        icon_path = os.path.join(base_path, 'icon.ico')
+        
+        # Set the application icon
+        app.setWindowIcon(QtGui.QIcon(icon_path))
+        
         player = VideoPlayer()
         player.show()
         sys.exit(app.exec_())
