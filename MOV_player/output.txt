@@ -1,0 +1,130 @@
+
+C:DiegoMOV_Player.
+|   DiegoMOV_player.py
+|   DiegoMOV_Player.spec
+|   requirements.txt
+|   setup.py
+|   
++---assets
+|       app_icon.icns
+|       app_icon.ico
+|       app_icon.jpg
+|       app_icon.png
+|       app_icon_old.gif
+|       app_icon_old.ico
+|       MIT���S.png
+|       MIT���S�P.png
+|       
++---build
+|   \---DiegoMOV_Player
+|       |   Analysis-00.toc
+|       |   base_library.zip
+|       |   COLLECT-00.toc
+|       |   DiegoMOV_Player.exe
+|       |   DiegoMOV_Player.pkg
+|       |   EXE-00.toc
+|       |   PKG-00.toc
+|       |   PYZ-00.pyz
+|       |   PYZ-00.toc
+|       |   warn-DiegoMOV_Player.txt
+|       |   xref-DiegoMOV_Player.html
+|       |   
+|       \---localpycs
+|               pyimod01_archive.pyc
+|               pyimod02_importers.pyc
+|               pyimod03_ctypes.pyc
+|               pyimod04_pywin32.pyc
+|               struct.pyc
+|               
++---dist
+|   \---DiegoMOV_Player
+|       |   DiegoMOV_Player.exe
+|       |   
+|       \---_internal
+|           +---assets
+|           |       app_icon.ico
+|           |       
+|           +---PyQt5             
+|           \---vlc
+|               |   help.html
+|               |   Readme.txt
+|               |   VLCPortable.exe
+|               |   
+|               +---AppInfo
+|               |   |   
+|               |   \---Launcher
+|               |           custom.nsh
+|               |           Splash.jpg
+|               |           VLCPortable.ini
+|               |           
+|               +---DefaultData
+|               |           
+|               +---Help
+|               |           
+|               +---Source
+|               |       
+|               \---vlc
+|                   |   AUTHORS.txt
+|                   |   axvlc.dll
+|                   |   COPYING.txt
+|                   |   libvlc.dll
+|                   |   libvlccore.dll
+|                   |   NEWS.txt
+|                   |   npvlc.dll
+|                   |   README.txt
+|                   |   THANKS.txt
+|                   |   vlc-cache-gen.exe
+|                   |   vlc.exe
+|                   |   vlc.ico
+|                   |   
+|                   +---hrtfs
+     
+|                   +---locale
+            
+|                   +---lua
+         
+|                   +---plugins
+
+|                               
++---venv
+|   |   pyvenv.cfg
+|   |   
+|   +---Include
+|   +---Lib
+|   |   \---site-packages
+
+|   |       +---altgraph
+
+      
+|   |       +---ordlookup
+          
+|   |       +---packaging
+         
+|   |       +---packaging-24.1.dist-info
+|   |       |       
+|   |       +---pefile-2024.8.26.dist-info
+      
+|   |       +---pip
+      
+|   |       +---pip-23.1.2.dist-info
+    
+|   |       +---pkg_resources
+       
+|   |       +---PyInstaller
+         
+|   |       +---pyinstaller-6.10.0.dist-info
+
+|   |       +---pyinstaller_hooks_contrib-2024.8.dist-info
+
+|   |       +---PyQt5
+
+|   |       |           
+|   |       +---PyQt5-5.15.11.dist-info
+
+|   |       +---PyQt5_sip-12.15.0.dist-info
+     
+|   |       +---python_vlc-3.0.21203.dist-info
+   
+|   |       +---pywin32_ctypes-0.2.3.dist-info
+
+|   |       +---setuptools
