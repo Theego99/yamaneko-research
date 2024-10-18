@@ -1,6 +1,6 @@
 from setuptools import setup
 
-APP = ['DiegoMOV_Player-MacOS.py']
+APP = ['your_script.py']
 import glob
 
 plugins = glob.glob('vlc/plugins/**/*', recursive=True)
@@ -17,6 +17,7 @@ OPTIONS = {
     'includes': ['sip', 'PyQt5', 'vlc'],
     'packages': ['vlc'],
     'plist': {
+        'CFBundleIdentifier': 'com.yourcompany.yourapp',
         'NSHighResolutionCapable': True,
     },
 }

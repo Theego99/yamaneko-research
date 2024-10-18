@@ -6,3 +6,4 @@ for more accurate recall 1 in 33 frames with a .4 detection threshold can be ver
 
 1 in 80 frames will result in a ~11s processing time per 10s video but it might miss some animals at a high threshold so anything over .35 is not recommended
 
+placing of the camera is very important, the AI is not good at discerning the plastic/metallic cords used as delimitors by the farmers, so its critical that none of these will be recorded by the trap camera

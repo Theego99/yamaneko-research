@@ -1,0 +1,3 @@
+different models: tyny→base→small→medium→large
+
+this is how to speech recognition: whisper --model medium --language Japanese "音声ファイルのパス"
