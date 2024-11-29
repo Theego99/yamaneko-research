@@ -1,9 +1,28 @@
-accuracy threshold under .25 will lead to many false detections but wont miss any animals at a lower frame selection rate
+動物検出アルゴリズム使用ガイドライン
 
-if frame selection rate is lower than 1 every 30 it is recommended that a threshold under .30 is set (.2 ~ .3)
+このソフトウェアは、動画内の動物検出を効率的に行うために設計されています。下記の設定ガイドラインとカメラ配置の推奨に従い、精度と処理速度を最適化してください。
+1. 精度閾値の設定
 
-for more accurate recall 1 in 33 frames with a .4 detection threshold can be very efficient but it will take on average around 27~30 seconds for processing each 10s video
+    閾値 0.25 以下: 多くの誤検出が発生する可能性がありますが、低いフレーム選択率の場合、動物の見逃しが少なくなります。
+    閾値 0.2 ~ 0.3: フレーム選択率が「30フレームに1回」より低い場合、この範囲の設定が推奨されます。
 
-1 in 80 frames will result in a ~11s processing time per 10s video but it might miss some animals at a high threshold so anything over .35 is not recommended
+2. 高精度リコール設定
 
-placing of the camera is very important, the AI is not good at discerning the plastic/metallic cords used as delimitors by the farmers, so its critical that none of these will be recorded by the trap camera
+    フレーム選択率 33フレームに1回 + 閾値 0.4: 動物検出の精度を高めるにはこの設定が効率的です。ただし、10秒の動画ごとに平均27〜30秒の処理時間がかかります。
+
+3. 低処理時間の設定
+
+    フレーム選択率 80フレームに1回: この設定では10秒動画あたりの処理時間が約11秒に短縮されますが、閾値が0.35以上になると動物を見逃す可能性があるため、0.35以下が推奨されます。
+
+4. 処理時間の短縮
+
+    処理秒数設定: 動画の最初の数秒のみを処理することで、全体の処理時間を大幅に短縮できます。例えば、処理秒数を「3秒」に設定すると、動画の最初の3秒のみが処理され、処理時間もその分短縮されます。推奨値は「3秒」です。
+
+5. カメラ配置の重要性
+
+    本アルゴリズムは、農家が使用するプラスチックや金属製の境界コードをうまく識別できません。これらがトラップカメラに映り込まないよう、カメラを配置することが重要です。
+
+6. フォルダ構成とデータ管理
+
+    'detection_data'フォルダー作成: オプションで「detection_data」フォルダーを作成し、動画の検出結果を保存できます。
+    認識情報なし動画の削除: 動物検出がない場合、動画を自動削除するオプションも利用可能です。

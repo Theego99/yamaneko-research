@@ -98,6 +98,9 @@ class VideoDetectionApp(QMainWindow):
 
         self.include_category_0_2_checkbox = QCheckBox("人や車が映った動画を残す ( 'hito_ + 元の名前'で名前を変更)")
         self.include_category_0_2_checkbox.setChecked(False)
+        
+        self.save_all_checkbox = QCheckBox("Save all detections")
+        self.save_all_checkbox.setChecked(False)
 
         self.start_button = QPushButton("処理開始")
         self.start_button.clicked.connect(self.start_processing)
@@ -137,6 +140,7 @@ class VideoDetectionApp(QMainWindow):
         layout.addWidget(self.create_detection_data_checkbox)
         layout.addWidget(self.delete_no_detection_checkbox)
         layout.addWidget(self.include_category_0_2_checkbox)
+        layout.addWidget(self.save_all_checkbox)
         layout.addWidget(self.start_button)
         layout.addWidget(self.progress_bar)
         layout.addWidget(self.log_text_edit)
@@ -165,6 +169,7 @@ class VideoDetectionApp(QMainWindow):
         delete_no_detection = self.delete_no_detection_checkbox.isChecked()
         include_category_0_2 = self.include_category_0_2_checkbox.isChecked()
         processing_duration_seconds = self.processing_duration_spinbox.value()  # *** Retrieve New Parameter ***
+        save_all_checkbox = self.save_all_checkbox.isChecked()
 
         # Disable the start button to prevent multiple clicks
         self.start_button.setEnabled(False)
@@ -180,6 +185,7 @@ class VideoDetectionApp(QMainWindow):
             create_detection_data=create_detection_data,
             delete_no_detection=delete_no_detection,
             include_category_0_2=include_category_0_2,
+            save_all_checkbox = self.save_all_checkbox,
             processing_duration_seconds=processing_duration_seconds  # *** Pass New Parameter ***
         )
         # Connect signals
@@ -406,14 +412,7 @@ class ProcessingThread(QThread):
                                 best_detection_0_2 = detection
                                 best_frame_0_2 = frame.copy()
                                 best_frame_detections_0_2 = frame_valid_detections_0_2.copy()
-
-                # Handle the category 0 or 2 detection
-                # if category_0_2_detected and include_category_0_2:
-                #     # If including category 0 or 2 detections, set a prefix
-                #     prefix = "hito_"
-                # else:
-                #     prefix = None
-
+                                
             if best_detection is None and not (include_category_0_2 and category_0_2_detected):
                 self.log(f"{video_path}に有効な認識データがありません")
                 shutil.rmtree(temp_dir)
@@ -431,14 +430,14 @@ class ProcessingThread(QThread):
 
             # Determine prefix based on detection condition
             if category_0_2_detected and include_category_0_2:
-                prefix = "hito_"
+                prefix = ""#hito_
                 best_detection = best_detection_0_2
                 best_frame = best_frame_0_2
                 best_frame_detections = best_frame_detections_0_2
             elif detection_in_upper_small:
-                prefix = "tori_"
+                prefix = ""#tori_
             else:
-                prefix = "nekokamo_"
+                prefix = ""#nekokamo_
 
             # Rename the original video file
             video_dir = os.path.dirname(video_path)
