@@ -4,15 +4,21 @@ import cv2
 import json
 import shutil
 import tempfile
+import subprocess
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QMainWindow, QFileDialog, QLabel, QLineEdit,
-    QPushButton, QVBoxLayout, QHBoxLayout, QSpinBox, QDoubleSpinBox, QCheckBox,
-    QTextEdit, QProgressBar
+    QApplication, QMainWindow, QFileDialog, QLabel, QLineEdit,
+    QPushButton, QVBoxLayout, QHBoxLayout, QProgressBar, QWidget,
+    QTextEdit, QStyle, QDialog, QCheckBox, QSpinBox, QDoubleSpinBox, QMessageBox
 )
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtGui import QIcon
 from megadetector.detection import video_utils
 from megadetector.detection.run_detector_batch import load_detector, process_images
+
+
 processed_videos = 0
+
+
 # Function to draw detections on an image
 def draw_detections_on_image(image, detections, confidence_threshold, output_path):
     """
@@ -35,9 +41,10 @@ def draw_detections_on_image(image, detections, confidence_threshold, output_pat
             cv2.putText(image, label, (x_min_pixel, y_min_pixel - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
 
     cv2.imwrite(output_path, image)
-    print(f"{output_path}に認識ボックスを保存しました")
+    print(f"Saved detection boxes to {output_path}")
 
-# Crop image based on bounding box
+
+# Function to crop images
 def crop_image_with_bbox_image(image, bbox):
     """
     Crops the image based on the bounding box and returns the cropped image.
@@ -50,7 +57,6 @@ def crop_image_with_bbox_image(image, bbox):
     x_max_pixel = int((x_min + bbox_width) * width)
     y_max_pixel = int((y_min + bbox_height) * height)
 
-    # Ensure the coordinates are within the image bounds
     x_min_pixel = max(0, x_min_pixel)
     y_min_pixel = max(0, y_min_pixel)
     x_max_pixel = min(width, x_max_pixel)
@@ -59,95 +65,477 @@ def crop_image_with_bbox_image(image, bbox):
     cropped_image = image[y_min_pixel:y_max_pixel, x_min_pixel:x_max_pixel]
     return cropped_image
 
+
+def process_image_file(
+    image_file, detector, confidence_threshold, output_base, log,
+    rename_images=False, delete_no_detections=False, hito_prefix="hito_", animal_prefix="nekokamo_"
+):
+    """
+    Process a single image file.
+    """
+    image_path = image_file
+    image_file_name = os.path.basename(image_file)
+    log(f"Processing image: {image_path}")
+
+    image = cv2.imread(image_path)
+    if image is None:
+        log(f"Could not read {image_path}")
+        return
+
+    results = process_images(
+        im_files=[image_path],
+        detector=detector,
+        confidence_threshold=0.0,
+        use_image_queue=False,
+        quiet=True
+    )
+
+    detections = results[0].get('detections', [])
+    valid_detections = [d for d in detections if d['conf'] > confidence_threshold]
+
+    if not valid_detections:
+        log(f"No valid detections in {image_path}")
+        if delete_no_detections:
+            try:
+                os.remove(image_path)
+                log(f"Deleted image: {image_path}")
+            except Exception as e:
+                log(f"Failed to delete {image_path}: {str(e)}")
+        return  # Do not proceed further
+
+    # Determine prefix based on detection type
+    prefix = ""
+
+    for detection in valid_detections:
+        if detection['category'] == '1':
+            prefix = animal_prefix
+        else:
+            prefix = hito_prefix
+
+
+    # Rename image file if enabled
+    if rename_images:
+        image_dir = os.path.dirname(image_path)
+        new_image_name = prefix + image_file_name
+        new_image_path = os.path.join(image_dir, new_image_name)
+
+        if os.path.exists(new_image_path):
+            log(f"Cannot rename {image_path}: File {new_image_name} already exists")
+        else:
+            os.rename(image_path, new_image_path)
+            log(f"Renamed image: {image_path} -> {new_image_path}")
+            image_file_name = new_image_name  # Update for consistency
+
+    # Save detections only if output_base is not None
+    if output_base is not None:
+        output_folder_name = f"{prefix}detection_data_{os.path.splitext(image_file_name)[0]}"
+        output_dir = os.path.join(output_base, output_folder_name)
+        os.makedirs(output_dir, exist_ok=True)
+
+        output_image_path = os.path.join(output_dir, 'detections.jpg')
+        draw_detections_on_image(image.copy(), valid_detections, confidence_threshold, output_image_path)
+        log(f"Saved detection image to {output_image_path}")
+
+        for i, detection in enumerate(valid_detections):
+            cropped_image = crop_image_with_bbox_image(image, detection['bbox'])
+            cropped_image_path = os.path.join(output_dir, f'cropped_image_{i}.jpg')
+            cv2.imwrite(cropped_image_path, cropped_image)
+            log(f"Saved cropped image to {cropped_image_path}")
+
+        log("Image processing complete")
+    else:
+        log("Detection data saving is disabled.")
+
+    log("Image processing complete")
+
+
+def process_video_file(
+    video_file, detector, confidence_threshold, output_base, log, 
+    every_n_frames=16, max_duration_seconds=10, save_all_detections=False,
+    rename_videos=False, delete_no_detections=False, hito_prefix="hito_", animal_prefix="nekokamo_"
+):
+    """
+    Process a single video file.
+    """
+    video_path = video_file
+    video_file_name = os.path.basename(video_file)
+    log(f"Processing video: {video_path}")
+
+    # Load the video
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        log(f"Could not open video {video_path}")
+        return
+
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    max_frames = int(max_duration_seconds * fps)
+
+    log(f"Video FPS: {fps}, Total Frames: {total_frames}, Max Frames to Process: {max_frames}")
+
+    frame_count = 0
+    temp_dir = tempfile.mkdtemp()
+    frame_files = []
+    frame_indices = []
+
+    # Variables to track the highest confidence detection
+    best_detection = None
+    best_frame = None
+    max_confidence = -1  # Initialize with a value lower than any confidence score
+
+    # List to store frames with detections when save_all_detections is True
+    frames_with_detections = []
+
+    # Flag to indicate if any detections were found
+    detections_found = False
+
+    try:
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            frame_count += 1
+            if frame_count > max_frames:
+                log(f"Reached max duration ({max_duration_seconds} seconds) for {video_path}")
+                break
+
+            if frame_count % every_n_frames == 0:
+                frame_filename = os.path.join(temp_dir, f'frame_{frame_count}.jpg')
+                cv2.imwrite(frame_filename, frame)
+                frame_files.append(frame_filename)
+                frame_indices.append(frame_count)
+
+        cap.release()
+
+        if not frame_files:
+            log(f"No frames extracted from {video_path}")
+            return
+
+        # Process frames using the detector
+        results = process_images(
+            im_files=frame_files,
+            detector=detector,
+            confidence_threshold=0.0,
+            use_image_queue=False,
+            quiet=True
+        )
+
+        for i, result in enumerate(results):
+            detections = result.get('detections', [])
+            valid_detections = [d for d in detections if d['conf'] > confidence_threshold]
+
+            if valid_detections:
+                detections_found = True  # At least one detection over the threshold found
+                frame_path = frame_files[i]
+                frame = cv2.imread(frame_path)
+                prefix = ""
+                # Update detection types for renaming
+                for detection in valid_detections:
+                    if detection['category'] == '1':
+                        prefix = animal_prefix
+                    else:
+                        prefix = hito_prefix
+
+                if save_all_detections and output_base is not None:
+                    # Collect frames with detections
+                    frames_with_detections.append((frame_path, valid_detections))
+                else:
+                    # Update max confidence and best detection
+                    for detection in valid_detections:
+                        if detection['conf'] > max_confidence:
+                            max_confidence = detection['conf']
+                            best_detection = detection
+                            best_frame = frame.copy()
+
+        if not detections_found:
+            log(f"No valid detections in {video_path}")
+            if delete_no_detections:
+                try:
+                    os.remove(video_path)
+                    log(f"Deleted video: {video_path}")
+                except Exception as e:
+                    log(f"Failed to delete {video_path}: {str(e)}")
+            return  # Do not proceed further
+
+        # Rename video file if enabled
+        if rename_videos:
+            video_dir = os.path.dirname(video_path)
+            new_video_name = prefix + video_file_name
+            new_video_path = os.path.join(video_dir, new_video_name)
+
+            if os.path.exists(new_video_path):
+                log(f"Cannot rename {video_path}: File {new_video_name} already exists")
+            else:
+                os.rename(video_path, new_video_path)
+                log(f"Renamed video: {video_path} -> {new_video_path}")
+                video_file_name = new_video_name  # Update for consistency
+                video_path = new_video_path       # Update video_path as well
+
+        # Save detections only if output_base is not None
+        if output_base is not None:
+            output_folder_name = f"{prefix}detection_data_{os.path.splitext(video_file_name)[0]}"
+            output_dir = os.path.join(output_base, output_folder_name)
+            os.makedirs(output_dir, exist_ok=True)
+
+            if save_all_detections and frames_with_detections:
+                for idx, (frame_path, detections) in enumerate(frames_with_detections):
+                    frame = cv2.imread(frame_path)
+                    frame_with_detections = frame.copy()
+                    output_image_path = os.path.join(output_dir, f"frame_{idx}_with_detections.jpg")
+                    draw_detections_on_image(frame_with_detections, detections, confidence_threshold, output_image_path)
+                    log(f"Saved frame with detections to {output_image_path}")
+
+                    # Save cropped images for each detection
+                    for j, detection in enumerate(detections):
+                        cropped_image = crop_image_with_bbox_image(frame, detection['bbox'])
+                        cropped_image_path = os.path.join(output_dir, f"frame_{idx}_cropped_{j}.jpg")
+                        cv2.imwrite(cropped_image_path, cropped_image)
+                        log(f"Saved cropped image to {cropped_image_path}")
+
+                log(f"Saved all detections for video {video_file_name} to {output_dir}")
+            elif best_detection is not None and best_frame is not None:
+                # Save best frame and cropped image
+                output_image_path = os.path.join(output_dir, 'best_frame_with_detections.jpg')
+                draw_detections_on_image(best_frame.copy(), [best_detection], confidence_threshold, output_image_path)
+
+                cropped_image = crop_image_with_bbox_image(best_frame, best_detection['bbox'])
+                cropped_image_path = os.path.join(output_dir, 'cropped_image.jpg')
+                cv2.imwrite(cropped_image_path, cropped_image)
+
+                log(f"Saved best frame with detection to {output_image_path}")
+                log(f"Saved cropped image to {cropped_image_path}")
+            else:
+                log("No frames to save.")
+        else:
+            log("Detection data saving is disabled.")
+
+        log("Video processing complete")
+
+    finally:
+        # Ensure the temporary directory is deleted
+        shutil.rmtree(temp_dir)
+
+
+class ProcessingThread(QThread):
+    log_signal = pyqtSignal(str)
+    progress_signal = pyqtSignal(int, int)  # Emits (processed_count, total_count)
+    finished = pyqtSignal()
+
+    def __init__(
+        self, input_folder, every_n_frames, confidence_threshold,
+        create_detection_data, delete_no_detection,
+        processing_duration_seconds, save_all_checkbox, rename_files_checkbox,
+        hito_prefix, animal_prefix
+    ):
+        super().__init__()
+        self.input_folder = input_folder
+        self.every_n_frames = every_n_frames
+        self.confidence_threshold = confidence_threshold
+        self.create_detection_data = create_detection_data
+        self.delete_no_detection = delete_no_detection
+        self.processing_duration_seconds = processing_duration_seconds
+        self.save_all_checkbox = save_all_checkbox
+        self.rename_files_checkbox = rename_files_checkbox
+        self.hito_prefix = hito_prefix
+        self.animal_prefix = animal_prefix
+        self.total_files = 0  # Initialize total files count
+        self.processed_count = 0  # Track processed files
+
+
+    def log(self, message):
+        self.log_signal.emit(message)
+
+    def update_progress(self):
+        """
+        Emit the progress signal with the current state.
+        """
+        self.progress_signal.emit(self.processed_count, self.total_files)
+
+    def run(self):
+        """
+        Entry point for the thread. Calls the main processing function.
+        """
+        self.log("Thread is running...")
+        self.process_data()
+        self.finished.emit()
+
+    def process_data(self):
+        """
+        Main processing function. Processes images and videos, while tracking progress.
+        """
+        try:
+            self.log("Starting processing...")
+            if self.create_detection_data:
+                output_base = os.path.join(self.input_folder, "detection_data")
+                os.makedirs(output_base, exist_ok=True)
+                self.log(f"Output will be saved to {output_base}")
+            else:
+                output_base = None  # Or set to some default
+
+            self.log("Loading AI detector model...")
+            try:
+                detector = load_detector('md_v5b.0.0.pt')  # Adjust path as needed
+                self.log("Detector loaded successfully.")
+            except Exception as e:
+                self.log(f"Failed to load detector: {str(e)}")
+                return
+
+            self.log("AI detector model loaded successfully")
+
+            self.log("Counting files in input folder...")
+            image_extensions = ['.jpg', '.jpeg', '.png']
+            video_extensions = ['.mp4', '.avi', '.mov', '.mkv']
+            prefixes = [self.hito_prefix, self.animal_prefix]  # Use user-defined prefixes
+
+            image_files = []
+            video_files = []
+
+            for root, dirs, files in os.walk(self.input_folder):
+                for f in files:
+                    ext = os.path.splitext(f)[1].lower()
+                    if ext in image_extensions:
+                        if not any(f.startswith(prefix) for prefix in prefixes):
+                            image_files.append(os.path.join(root, f))
+                    elif ext in video_extensions:
+                        if not any(f.startswith(prefix) for prefix in prefixes):
+                            video_files.append(os.path.join(root, f))
+
+            self.total_files = len(image_files) + len(video_files)
+            self.log(f"Found {len(image_files)} images and {len(video_files)} videos")
+
+            # Process images
+            self.log("Processing images...")
+            for image_file in image_files:
+                self.log(f"Processing image: {image_file}")
+                process_image_file(
+                    image_file=image_file,
+                    detector=detector,
+                    confidence_threshold=self.confidence_threshold,
+                    output_base=output_base,
+                    log=self.log,
+                    rename_images=self.rename_files_checkbox,
+                    delete_no_detections=self.delete_no_detection,
+                    hito_prefix=self.hito_prefix,
+                    animal_prefix=self.animal_prefix
+                )
+                self.processed_count += 1
+                self.update_progress()
+
+            # Process videos
+            self.log("Processing videos...")
+            for video_file in video_files:
+                self.log(f"Processing video: {video_file}")
+                process_video_file(
+                    video_file=video_file,
+                    detector=detector,
+                    confidence_threshold=self.confidence_threshold,
+                    output_base=output_base,
+                    log=self.log,
+                    every_n_frames=self.every_n_frames,
+                    max_duration_seconds=self.processing_duration_seconds,
+                    save_all_detections=self.save_all_checkbox,
+                    rename_videos=self.rename_files_checkbox,
+                    delete_no_detections=self.delete_no_detection,
+                    hito_prefix=self.hito_prefix,
+                    animal_prefix=self.animal_prefix
+                )
+                self.processed_count += 1
+                self.update_progress()
+
+            self.log("Processing completed successfully.")
+        except Exception as e:
+            self.log(f"Error during processing: {str(e)}")
+        finally:
+            self.finished.emit()
+
 class VideoDetectionApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("動画　ー　動物認識・処理")
+        self.setWindowTitle("Animal Detection Tool")
         self.initUI()
 
+        # Initialize settings variables with default values
+        self.frame_interval = 16
+        self.confidence_threshold = 0.4
+        self.processing_duration_seconds = 5
+        self.create_detection_data = False
+        self.delete_no_detection = False
+        self.save_all = False
+        self.rename_files = False
+        self.hito_prefix = "hito_"
+        self.animal_prefix = "nekokamo_"
+
     def initUI(self):
-        # Create widgets
+        # Create main widgets
         self.input_dir_label = QLabel("処理対象フォルダー:")
         self.input_dir_line_edit = QLineEdit()
         self.browse_button = QPushButton("参照")
         self.browse_button.clicked.connect(self.browse_input_directory)
-
-        self.frame_interval_label = QLabel("コマ間隔 (コマ何枚に１枚処理するか):")
-        self.frame_interval_spinbox = QSpinBox()
-        self.frame_interval_spinbox.setRange(1, 1000)
-        self.frame_interval_spinbox.setValue(16)
-
-        self.confidence_threshold_label = QLabel("確信度のしきい値:")
-        self.confidence_threshold_spinbox = QDoubleSpinBox()
-        self.confidence_threshold_spinbox.setRange(0.0, 1.0)
-        self.confidence_threshold_spinbox.setSingleStep(0.01)
-        self.confidence_threshold_spinbox.setValue(0.4)
-
-        # *** New GUI Elements Start Here ***
-        self.processing_duration_label = QLabel("動画の何秒まで処理:")
-        self.processing_duration_spinbox = QSpinBox()
-        self.processing_duration_spinbox.setRange(1, 3600)  # 1 second to 1 hour
-        self.processing_duration_spinbox.setValue(5)  # Default value
-        # *** New GUI Elements End Here ***
-
-        self.create_detection_data_checkbox = QCheckBox("'detection_data'フォルダーを作成する")
-        self.create_detection_data_checkbox.setChecked(False)
-
-        self.delete_no_detection_checkbox = QCheckBox("認識情報がない動画を削除する")
-        self.delete_no_detection_checkbox.setChecked(False)
-
-        self.include_category_0_2_checkbox = QCheckBox("人や車が映った動画を残す ( 'hito_ + 元の名前'で名前を変更)")
-        self.include_category_0_2_checkbox.setChecked(False)
-        
-        self.save_all_checkbox = QCheckBox("Save all detections")
-        self.save_all_checkbox.setChecked(False)
 
         self.start_button = QPushButton("処理開始")
         self.start_button.clicked.connect(self.start_processing)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setValue(0)
-        self.progress_bar.setFormat("%v/%m")  # Set initial format to show current/maximum
+        self.progress_bar.setFormat("%v/%m")
 
+        self.open_external_app_button = QPushButton("動画再生APPを開く")
+        self.open_external_app_button.clicked.connect(self.open_external_application)
+
+        # Create the 'Show Logs' clickable label
+        self.show_logs_label = QLabel("<a href='#'>ログを表示</a>")
+        self.show_logs_label.setOpenExternalLinks(False)
+        self.show_logs_label.linkActivated.connect(self.toggle_logs)
+
+        # Create the log text edit, initially hidden
         self.log_text_edit = QTextEdit()
         self.log_text_edit.setReadOnly(True)
+        self.log_text_edit.hide()  # Initially hidden
+
+        # Create the settings button (settings wheel icon)
+        self.settings_button = QPushButton()
+        settings_icon = QIcon(r'C:\yamaneko-kenkyu\animal-detection\assets\settings.png')  # Ensure you have an icon file
+        self.settings_button.setIcon(settings_icon)
+        self.settings_button.clicked.connect(self.open_settings_dialog)
+        self.settings_button.setFlat(True)
+        self.settings_button.setFixedSize(24, 24)
 
         # Layouts
-        layout = QVBoxLayout()
+        main_layout = QVBoxLayout()
         input_dir_layout = QHBoxLayout()
         input_dir_layout.addWidget(self.input_dir_label)
         input_dir_layout.addWidget(self.input_dir_line_edit)
         input_dir_layout.addWidget(self.browse_button)
 
-        frame_interval_layout = QHBoxLayout()
-        frame_interval_layout.addWidget(self.frame_interval_label)
-        frame_interval_layout.addWidget(self.frame_interval_spinbox)
+        # Add settings button to the top right
+        header_layout = QHBoxLayout()
+        header_layout.addStretch()
+        header_layout.addWidget(self.settings_button)
 
-        confidence_threshold_layout = QHBoxLayout()
-        confidence_threshold_layout.addWidget(self.confidence_threshold_label)
-        confidence_threshold_layout.addWidget(self.confidence_threshold_spinbox)
-
-        # *** New Layout for Processing Duration ***
-        processing_duration_layout = QHBoxLayout()
-        processing_duration_layout.addWidget(self.processing_duration_label)
-        processing_duration_layout.addWidget(self.processing_duration_spinbox)
-        # *** End of New Layout ***
-
-        layout.addLayout(input_dir_layout)
-        layout.addLayout(frame_interval_layout)
-        layout.addLayout(confidence_threshold_layout)
-        layout.addLayout(processing_duration_layout)  # Add new layout here
-        layout.addWidget(self.create_detection_data_checkbox)
-        layout.addWidget(self.delete_no_detection_checkbox)
-        layout.addWidget(self.include_category_0_2_checkbox)
-        layout.addWidget(self.save_all_checkbox)
-        layout.addWidget(self.start_button)
-        layout.addWidget(self.progress_bar)
-        layout.addWidget(self.log_text_edit)
+        main_layout.addLayout(header_layout)
+        main_layout.addLayout(input_dir_layout)
+        main_layout.addWidget(self.start_button)
+        main_layout.addWidget(self.progress_bar)
+        main_layout.addWidget(self.open_external_app_button)
+        main_layout.addWidget(self.show_logs_label)
+        main_layout.addWidget(self.log_text_edit)
 
         central_widget = QWidget()
-        central_widget.setLayout(layout)
+        central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
+
+    def toggle_logs(self):
+        if self.log_text_edit.isVisible():
+            self.log_text_edit.hide()
+            self.show_logs_label.setText("<a href='#'>ログを表示</a>")
+        else:
+            self.log_text_edit.show()
+            self.show_logs_label.setText("<a href='#'>ログを隠す</a>")
+
+    def open_settings_dialog(self):
+        dialog = SettingsDialog(self)
+        dialog.exec_()
 
     def browse_input_directory(self):
         dir_name = QFileDialog.getExistingDirectory(self, "処理対象フォルダーを選択", "")
@@ -158,347 +546,318 @@ class VideoDetectionApp(QMainWindow):
         # Get parameters from UI
         input_folder = self.input_dir_line_edit.text()
         if not input_folder:
-            self.log("処理対象フォルダーを選択してください")
+            self.log("Please select a folder to process")
             return
         if not os.path.isdir(input_folder):
-            self.log("選択されたフォルダーは存在しません")
+            self.log("Selected folder does not exist")
             return
-        every_n_frames = self.frame_interval_spinbox.value()
-        confidence_threshold = self.confidence_threshold_spinbox.value()
-        create_detection_data = self.create_detection_data_checkbox.isChecked()
-        delete_no_detection = self.delete_no_detection_checkbox.isChecked()
-        include_category_0_2 = self.include_category_0_2_checkbox.isChecked()
-        processing_duration_seconds = self.processing_duration_spinbox.value()  # *** Retrieve New Parameter ***
-        save_all_checkbox = self.save_all_checkbox.isChecked()
+
+        self.log("Starting processing thread...")
+
+        # Use settings variables
+        every_n_frames = self.frame_interval
+        confidence_threshold = self.confidence_threshold
+        create_detection_data = self.create_detection_data
+        delete_no_detection = self.delete_no_detection
+        processing_duration_seconds = self.processing_duration_seconds
+        save_all_checkbox = self.save_all
+        rename_files_checkbox = self.rename_files
+
+        # Get user-defined prefixes
+        hito_prefix = self.hito_prefix
+        animal_prefix = self.animal_prefix
 
         # Disable the start button to prevent multiple clicks
         self.start_button.setEnabled(False)
-        # Reset progress bar
         self.progress_bar.setValue(0)
-        self.progress_bar.setFormat("%v/%m ")  # Reset format
 
-        # Start the processing in a separate thread
         self.processing_thread = ProcessingThread(
             input_folder=input_folder,
             every_n_frames=every_n_frames,
             confidence_threshold=confidence_threshold,
             create_detection_data=create_detection_data,
             delete_no_detection=delete_no_detection,
-            include_category_0_2=include_category_0_2,
-            save_all_checkbox = self.save_all_checkbox,
-            processing_duration_seconds=processing_duration_seconds  # *** Pass New Parameter ***
+            save_all_checkbox=save_all_checkbox,
+            processing_duration_seconds=processing_duration_seconds,
+            rename_files_checkbox=rename_files_checkbox,
+            hito_prefix=hito_prefix,
+            animal_prefix=animal_prefix
         )
+
         # Connect signals
         self.processing_thread.log_signal.connect(self.log)
         self.processing_thread.progress_signal.connect(self.update_progress)
         self.processing_thread.finished.connect(self.processing_finished)
+
+        # Start thread
         self.processing_thread.start()
+        self.log("Processing thread started.")
 
     def log(self, message):
         self.log_text_edit.append(message)
 
     def update_progress(self, processed, total):
-        print("processed ",processed)
-        """
-        Update the progress bar with the number of processed videos and total videos.
-        """
         self.progress_bar.setMaximum(total)
         self.progress_bar.setValue(processed)
-        # The format "%v/%m" will automatically display "processed/total"
-        # Ensure that the format is set correctly
         self.progress_bar.setFormat(f"{processed}/{total}")
+        self.log(f"Progress: {processed}/{total}")
 
     def processing_finished(self):
-        self.log("処理完了")
+        self.log("Processing complete")
         self.start_button.setEnabled(True)
 
-class ProcessingThread(QThread):
-    log_signal = pyqtSignal(str)
-    progress_signal = pyqtSignal(int, int)  # *** Updated to emit processed and total ***
+    def open_external_application(self):
+        # ... [Your existing implementation] ...
+        pass
 
-    finished = pyqtSignal()
+    # ... [Include other methods as needed] ...
 
-    def __init__(
-        self, input_folder, every_n_frames, confidence_threshold,
-        create_detection_data, delete_no_detection, include_category_0_2,
-        processing_duration_seconds  # *** New Parameter ***
-    ):
-        super().__init__()
-        self.input_folder = input_folder
-        self.every_n_frames = every_n_frames
-        self.confidence_threshold = confidence_threshold
-        self.create_detection_data = create_detection_data
-        self.delete_no_detection = delete_no_detection
-        self.include_category_0_2 = include_category_0_2
-        self.processing_duration_seconds = processing_duration_seconds  # *** Store New Parameter ***
+    def processing_finished(self):
+        self.log("Processing complete")
+        self.start_button.setEnabled(True)
 
-    def run(self):
-        # Main processing code goes here
-        self.process_videos()
-        self.finished.emit()
+    def open_external_application(self):
+        """
+        Opens the external application specified by the path.
+        Passes the selected folder as an argument if one is selected.
+        """
+        script_path = r"C:\yamaneko-kenkyu\animal-detection\exclusive_player\video_player.py"
+        python_executable = sys.executable  # Path to the current Python interpreter
 
-    def log(self, message):
-        self.log_signal.emit(message)
+        # Get the selected folder path from the input field
+        input_folder = self.input_dir_line_edit.text()
 
-    def update_progress(self, processed, total):
-        self.progress_signal.emit(processed, total)
-
-    def process_videos(self):
-        input_folder = self.input_folder
-        every_n_frames = self.every_n_frames
-        confidence_threshold = self.confidence_threshold
-        create_detection_data = self.create_detection_data
-        delete_no_detection = self.delete_no_detection
-        include_category_0_2 = self.include_category_0_2
-        processing_duration_seconds = self.processing_duration_seconds  # *** Use New Parameter ***
-
-        if create_detection_data:
-            output_base = os.path.join(input_folder, "detection_data")
-            tracking_file = os.path.join(output_base, 'video_confidence_tracking.json')
-
-            # Create output directory
-            os.makedirs(output_base, exist_ok=True)
-            self.log(f"出力データを {output_base}　に保存します")
-
-        model_file = r'md_v5b.0.0.pt'  # Ensure this points to your actual model file path
-
-        # Load data
-        if create_detection_data and os.path.exists(tracking_file):
-            with open(tracking_file, 'r') as f:
-                video_confidence_dict = json.load(f)
+        # Build the command arguments
+        if input_folder and os.path.isdir(input_folder):
+            args = [python_executable, script_path, input_folder]
+            self.log(f"Opening external application with folder: {input_folder}")
         else:
-            video_confidence_dict = {}
+            args = [python_executable, script_path]
+            self.log(f"Opening external application without folder argument.")
 
-        # Load the detector once
-        detector = load_detector(model_file)
-        self.log("動物認識AIの読み込みが完了しました")
+        try:
+            subprocess.Popen(args, cwd=os.path.dirname(script_path))
+            self.log(f"Opened external application: {script_path}")
+        except Exception as e:
+            self.log(f"Failed to open external application: {str(e)}")
 
-        # Load video filenames
-        video_filenames = video_utils.find_videos(input_folder, recursive=True)
-        video_paths = [os.path.join(input_folder, fn) for fn in video_filenames]
 
-        if not video_paths:
-            self.log("選択されたフォルダーに処理対象の .MOV　動画が見つかりませんでした")
+    def remove_prefixes_from_files(self):
+        """
+        Removes specified prefixes from file names in the selected folder.
+        """
+        input_folder = self.input_dir_line_edit.text()
+        if not input_folder:
+            self.log("Please select a folder first.")
+            return
+        if not os.path.isdir(input_folder):
+            self.log("Selected folder does not exist.")
             return
 
-        total_videos = len(video_paths)
-        self.log(f"\n {total_videos} 本の動画が見つかりました　\n")
+        # Get user-defined prefixes
+        hito_prefix = self.hito_prefix_line_edit.text()
+        animal_prefix = self.animal_prefix_line_edit.text()
+        prefixes = [hito_prefix, animal_prefix]
 
-        # Emit initial progress
-        self.update_progress(processed_videos, total_videos)
+        # Confirm renaming
+        reply = QMessageBox.question(
+            self,
+            "Confirm Prefix Removal",
+            f"This will remove the prefixes {prefixes} from file names in the selected folder.\nAre you sure you want to proceed?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
 
-        
+        if reply == QMessageBox.No:
+            self.log("Prefix removal canceled.")
+            return
 
-        def process_video(video_path):
-            global processed_videos
-            processed_videos += 1
-            self.update_progress(processed_videos, total_videos)  # *** Emit progress with processed and total ***
-            cap = cv2.VideoCapture(video_path)
-            if not cap.isOpened():
-                self.log(f"動画 {video_path} を開くことができませんでした")
-                return
+        # Proceed with renaming
+        renamed_files = []
+        for root, dirs, files in os.walk(input_folder):
+            for file in files:
+                for prefix in prefixes:
+                    if file.startswith(prefix):
+                        original_file_path = os.path.join(root, file)
+                        new_file_name = file[len(prefix):]  # Remove the prefix
+                        new_file_path = os.path.join(root, new_file_name)
 
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            duration_seconds = total_frames / fps
-            max_frames = int(processing_duration_seconds * fps)
+                        # Check if a file with the new name already exists
+                        if os.path.exists(new_file_path):
+                            self.log(f"Cannot rename {original_file_path} to {new_file_name}: File already exists.")
+                            continue
 
-            self.log(f"動画のFPS: {fps}, 総フレーム数: {total_frames}, 処理する最大フレーム数: {max_frames}")
+                        try:
+                            os.rename(original_file_path, new_file_path)
+                            renamed_files.append((original_file_path, new_file_path))
+                        except Exception as e:
+                            self.log(f"Failed to rename {original_file_path}: {str(e)}")
 
-            frame_count = 0
-            max_confidence_detection = 0
-            best_frame = None
-            best_detection = None
-            best_frame_detections = []
-            detection_in_upper_small = False  # Flag for 'tori' condition
-            category_0_2_detected = False  # Flag for category 0 or 2 detections
-            max_confidence_0_2 = 0
-            best_detection_0_2 = None
-            best_frame_0_2 = None
-            best_frame_detections_0_2 = []
+        self.log(f"Renamed {len(renamed_files)} files by removing prefixes.")
+        for original, new in renamed_files:
+            self.log(f"Renamed: {original} -> {new}")
 
-            temp_dir = tempfile.mkdtemp()
-            frame_files = []
-            frame_indices = []
+class SettingsDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("設定")
+        self.parent = parent
+        self.initUI()
 
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if not ret:
-                    break
-                frame_count += 1
+    def initUI(self):
+        # Create settings widgets
+        self.frame_interval_label = QLabel("コマ間隔 (コマ何枚に１枚処理するか):")
+        self.frame_interval_spinbox = QSpinBox()
+        self.frame_interval_spinbox.setRange(1, 1000)
+        self.frame_interval_spinbox.setValue(self.parent.frame_interval)
 
-                # Check if we've reached the maximum frames to process
-                if frame_count > max_frames:
-                    self.log(f"{processing_duration_seconds}秒に達したため、{video_path}の処理を終了します")
-                    break
+        self.confidence_threshold_label = QLabel("確信度のしきい値:")
+        self.confidence_threshold_spinbox = QDoubleSpinBox()
+        self.confidence_threshold_spinbox.setRange(0.0, 1.0)
+        self.confidence_threshold_spinbox.setSingleStep(0.01)
+        self.confidence_threshold_spinbox.setValue(self.parent.confidence_threshold)
 
-                if frame_count % every_n_frames == 0:
-                    frame_filename = os.path.join(temp_dir, f'frame_{frame_count}.jpg')
-                    cv2.imwrite(frame_filename, frame)
-                    frame_files.append(frame_filename)
-                    frame_indices.append(frame_count)
+        self.processing_duration_label = QLabel("動画の何秒まで処理:")
+        self.processing_duration_spinbox = QSpinBox()
+        self.processing_duration_spinbox.setRange(1, 3600)
+        self.processing_duration_spinbox.setValue(self.parent.processing_duration_seconds)
 
-            cap.release()
+        self.create_detection_data_checkbox = QCheckBox("'detection_data'フォルダーを作成する")
+        self.create_detection_data_checkbox.setChecked(self.parent.create_detection_data)
 
-            if not frame_files:
-                self.log(f"{video_path}に処理するコマがありません")
-                shutil.rmtree(temp_dir)
-                if delete_no_detection:
-                    try:
-                        os.remove(video_path)
-                        self.log(f"動物を認識できなかったため、 {video_path}を削除します")
-                    except Exception as e:
-                        self.log(f"{video_path}の削除エラー: {e}")
-                return
+        self.delete_no_detection_checkbox = QCheckBox("認識情報がない動画を削除する")
+        self.delete_no_detection_checkbox.setChecked(self.parent.delete_no_detection)
 
-            # Process frames in batch using process_images
-            results = process_images(
-                im_files=frame_files,
-                detector=detector,
-                confidence_threshold=0.0,
-                use_image_queue=False,
-                quiet=True,
-                image_size=None,
-                checkpoint_queue=None,
-                include_image_size=False,
-                include_image_timestamp=False,
-                include_exif_data=False
-            )
+        self.save_all_checkbox = QCheckBox("すべてのフレームを保存")
+        self.save_all_checkbox.setChecked(self.parent.save_all)
 
-            for i, result in enumerate(results):
-                frame_idx = frame_indices[i]
-                frame_filename = frame_files[i]
-                frame = cv2.imread(frame_filename)
+        self.rename_files_checkbox = QCheckBox("タグで動画・画像の名前を変更")
+        self.rename_files_checkbox.setChecked(self.parent.rename_files)
 
-                if frame is None:
-                    self.log(f" {frame_filename}のコマを読み込めませんでした")
-                    continue
+        # Prefix inputs
+        self.hito_prefix_label = QLabel("人・車のタグ:")
+        self.hito_prefix_line_edit = QLineEdit()
+        self.hito_prefix_line_edit.setText(self.parent.hito_prefix)
 
-                detections = result.get('detections', [])
-                frame_valid_detections = []
-                frame_valid_detections_0_2 = []
+        self.animal_prefix_label = QLabel("鳥以外の動物のタグ:")
+        self.animal_prefix_line_edit = QLineEdit()
+        self.animal_prefix_line_edit.setText(self.parent.animal_prefix)
 
-                for detection in detections:
-                    if detection['conf'] > confidence_threshold:
-                        if detection['category'] == '1':
-                            height, width, _ = frame.shape
-                            x_min, y_min, bbox_width, bbox_height = detection['bbox']
-                            x_min_pixel = int(x_min * width)
-                            y_min_pixel = int(y_min * height)
-                            x_max_pixel = int((x_min + bbox_width) * width)
-                            y_max_pixel = int((y_min + bbox_height) * height)
+        # Layouts
+        layout = QVBoxLayout()
 
-                            bbox_width_pixels = x_max_pixel - x_min_pixel
-                            bbox_height_pixels = y_max_pixel - y_min_pixel
+        frame_interval_layout = QHBoxLayout()
+        frame_interval_layout.addWidget(self.frame_interval_label)
+        frame_interval_layout.addWidget(self.frame_interval_spinbox)
 
-                            # Check for 'tori' condition
-                            if (y_max_pixel <= height / 2 and bbox_width_pixels + bbox_height_pixels < 180) or (bbox_width_pixels < 60 and bbox_height_pixels < 60):
-                                detection_in_upper_small = True
+        confidence_threshold_layout = QHBoxLayout()
+        confidence_threshold_layout.addWidget(self.confidence_threshold_label)
+        confidence_threshold_layout.addWidget(self.confidence_threshold_spinbox)
 
-                            frame_valid_detections.append(detection)
+        processing_duration_layout = QHBoxLayout()
+        processing_duration_layout.addWidget(self.processing_duration_label)
+        processing_duration_layout.addWidget(self.processing_duration_spinbox)
 
-                            # Update max confidence and best detection
-                            if detection['conf'] > max_confidence_detection:
-                                max_confidence_detection = detection['conf']
-                                best_detection = detection
-                                best_frame = frame.copy()
-                                best_frame_detections = frame_valid_detections.copy()
-                        elif detection['category'] in ['0', '2']:
-                            category_0_2_detected = True
-                            frame_valid_detections_0_2.append(detection)
+        hito_prefix_layout = QHBoxLayout()
+        hito_prefix_layout.addWidget(self.hito_prefix_label)
+        hito_prefix_layout.addWidget(self.hito_prefix_line_edit)
 
-                            if detection['conf'] > max_confidence_0_2:
-                                max_confidence_0_2 = detection['conf']
-                                best_detection_0_2 = detection
-                                best_frame_0_2 = frame.copy()
-                                best_frame_detections_0_2 = frame_valid_detections_0_2.copy()
-                                
-            if best_detection is None and not (include_category_0_2 and category_0_2_detected):
-                self.log(f"{video_path}に有効な認識データがありません")
-                shutil.rmtree(temp_dir)
-                if delete_no_detection:
-                    try:
-                        os.remove(video_path)
-                        self.log(f"{video_path}認識データなかったため、削除しました")
-                    except Exception as e:
-                        self.log(f"{video_path}の削除エラー: {e}")
-                return
+        animal_prefix_layout = QHBoxLayout()
+        animal_prefix_layout.addWidget(self.animal_prefix_label)
+        animal_prefix_layout.addWidget(self.animal_prefix_line_edit)
 
-            # Update tracking data
-            if create_detection_data:
-                video_confidence_dict[video_path] = max_confidence_detection
+        layout.addLayout(frame_interval_layout)
+        layout.addLayout(confidence_threshold_layout)
+        layout.addLayout(processing_duration_layout)
+        layout.addWidget(self.create_detection_data_checkbox)
+        layout.addWidget(self.delete_no_detection_checkbox)
+        layout.addWidget(self.save_all_checkbox)
+        layout.addWidget(self.rename_files_checkbox)
+        layout.addLayout(hito_prefix_layout)
+        layout.addLayout(animal_prefix_layout)
 
-            # Determine prefix based on detection condition
-            if category_0_2_detected and include_category_0_2:
-                prefix = ""#hito_
-                best_detection = best_detection_0_2
-                best_frame = best_frame_0_2
-                best_frame_detections = best_frame_detections_0_2
-            elif detection_in_upper_small:
-                prefix = ""#tori_
-            else:
-                prefix = ""#nekokamo_
+        # Add OK and Cancel buttons
+        buttons_layout = QHBoxLayout()
+        ok_button = QPushButton("OK")
+        cancel_button = QPushButton("キャンセル")
+        ok_button.clicked.connect(self.accept)
+        cancel_button.clicked.connect(self.reject)
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(ok_button)
+        buttons_layout.addWidget(cancel_button)
 
-            # Rename the original video file
-            video_dir = os.path.dirname(video_path)
-            video_name = os.path.basename(video_path)
-            new_video_name = prefix + video_name
-            new_video_path = os.path.join(video_dir, new_video_name)
+        layout.addLayout(buttons_layout)
 
-            # Check if the new video name already exists
-            if os.path.exists(new_video_path):
-                self.log(f"{new_video_path} フォルダーはすでに存在します。{video_path}の名前を変更できません")
-            else:
-                try:
-                    os.rename(video_path, new_video_path)
-                    self.log(f"{video_path} を {new_video_path}に名前変更しました")
-                except Exception as e:
-                    self.log(f"{video_path}の名前変更エラー: {e}")
+        self.setLayout(layout)
 
-            if create_detection_data and best_detection is not None:
-                # Create output directory
-                output_folder_name = prefix + os.path.splitext(video_name)[0]
-                output_dir = os.path.join(output_base, output_folder_name)
-                os.makedirs(output_dir, exist_ok=True)
-
-                # Draw detections on best_frame
-                output_image_path = os.path.join(output_dir, 'best_frame_detections.jpg')
-                draw_detections_on_image(best_frame.copy(), best_frame_detections, confidence_threshold, output_image_path)
-
-                # Crop the image based on the bounding box of the best detection
-                cropped_image = crop_image_with_bbox_image(best_frame, best_detection['bbox'])
-
-                # Save the cropped image
-                cropped_image_path = os.path.join(output_dir, 'cropped_image.jpg')
-                cv2.imwrite(cropped_image_path, cropped_image)
-                self.log(f"{cropped_image_path}に切り取られた画像を保存しました")
-
-            # Clean up temporary files
-            shutil.rmtree(temp_dir)
-
-        def save_video_confidence_dict():
-            if create_detection_data:
-                with open(tracking_file, 'w') as f:
-                    json.dump(video_confidence_dict, f, indent=2)
-                self.log(f"動画の確信度データを{tracking_file}に保存しました")
-
-        # Process each video
-        for video_path in video_paths:
-            print(processed_videos)
-            self.log(f"{video_path}を処理中...")
-            process_video(video_path)
-            self.log("-" * 50)
-
-        # Save the video confidence tracking file
-        save_video_confidence_dict()
-        self.log("\n=== 処理完了 ===")
-        # Ensure progress bar is at 100% after processing
-        self.update_progress(total_videos, total_videos)  # *** Set progress to total ***
-
-    # Removed duplicate progress update from process_video
+    def accept(self):
+        # Update parent settings variables
+        self.parent.frame_interval = self.frame_interval_spinbox.value()
+        self.parent.confidence_threshold = self.confidence_threshold_spinbox.value()
+        self.parent.processing_duration_seconds = self.processing_duration_spinbox.value()
+        self.parent.create_detection_data = self.create_detection_data_checkbox.isChecked()
+        self.parent.delete_no_detection = self.delete_no_detection_checkbox.isChecked()
+        self.parent.save_all = self.save_all_checkbox.isChecked()
+        self.parent.rename_files = self.rename_files_checkbox.isChecked()
+        self.parent.hito_prefix = self.hito_prefix_line_edit.text()
+        self.parent.animal_prefix = self.animal_prefix_line_edit.text()
+        super().accept()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+
+    # Apply dark theme stylesheet
+    dark_stylesheet = """
+    QWidget {
+        background-color: #2e2e2e;
+        color: #f0f0f0;
+        font-family: 'Segoe UI';
+        font-size: 10pt;
+    }
+    QLineEdit, QTextEdit {
+        background-color: #3e3e3e;
+        color: #f0f0f0;
+        border: 1px solid #4e4e4e;
+    }
+    QPushButton {
+        background-color: #4e4e4e;
+        color: #f0f0f0;
+        border: 1px solid #5e5e5e;
+        padding: 5px;
+        border-radius: 5px;
+    }
+    QPushButton:hover {
+        background-color: qlineargradient(
+            spread:pad, x1:0, y1:0, x2:1, y2:0,
+            stop:0 #5e5e5e, stop:1 #6e6e6e);
+    }
+    QPushButton:pressed {
+        background-color: #3e3e3e;
+    }
+    QProgressBar {
+        background-color: #3e3e3e;
+        border: 1px solid #4e4e4e;
+        color: #f0f0f0;
+        text-align: center;
+    }
+    QProgressBar::chunk {
+        background-color: qlineargradient(
+            spread:pad, x1:0, y1:0, x2:1, y2:0,
+            stop:0 #00bfff, stop:1 #1e90ff);
+    }
+    QLabel {
+        color: #f0f0f0;
+    }
+    QCheckBox {
+        color: #f0f0f0;
+    }
+    QDialog {
+        background-color: #2e2e2e;
+    }
+    """
+
+    app.setStyleSheet(dark_stylesheet)
+
     window = VideoDetectionApp()
     window.show()
     sys.exit(app.exec_())
