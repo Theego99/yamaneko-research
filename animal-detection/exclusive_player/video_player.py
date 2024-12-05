@@ -76,9 +76,10 @@ logging.basicConfig(
 class VideoPlayer(QtWidgets.QMainWindow):
     def __init__(self):
         super(VideoPlayer, self).__init__()
-        self.setWindowTitle("DiegoMOV プレーヤー")
+        self.setWindowTitle("Wild Player")
         self.setGeometry(100, 100, 800, 600)
-
+        # Initialize rename_line_edit
+        self.rename_line_edit = None
         try:
             # Determine the base path
             if getattr(sys, 'frozen', False):
@@ -92,7 +93,7 @@ class VideoPlayer(QtWidgets.QMainWindow):
                 logging.debug("Running in development mode.")
 
                     # Path to the icon file
-            icon_path = os.path.join(base_path, 'assets/app_icon.ico')
+            icon_path = os.path.join(base_path, 'assets/app_icon.png')
             
             # Set the window icon
             self.setWindowIcon(QtGui.QIcon(icon_path))
@@ -253,15 +254,40 @@ class VideoPlayer(QtWidgets.QMainWindow):
         self.speed_combo.setFixedHeight(50)
         controls_layout.addWidget(self.speed_combo)
 
-        # Main layout
+    # Main layout
         layout = QVBoxLayout()
         layout.addWidget(self.video_frame)
         layout.addLayout(controls_layout)
+
+        # Rename controls layout
+        rename_layout = QHBoxLayout()
+
+        # Text field for entering new name
+        self.rename_line_edit = QtWidgets.QLineEdit(self)
+        rename_layout.addWidget(self.rename_line_edit)
+        
+        # Connect returnPressed signal to rename_video method
+        self.rename_line_edit.returnPressed.connect(self.rename_video) 
+
+        # Rename button
+        self.rename_button = QPushButton("OK")
+        self.rename_button.clicked.connect(self.rename_video)
+        rename_layout.addWidget(self.rename_button)
+
+        # Adjust sizes and styles if necessary
+        self.rename_button.setFixedHeight(30)
+        self.rename_line_edit.setFixedHeight(30)
+
+        # Add the rename_layout to the main layout
+        layout.addLayout(rename_layout)
 
         # Container widget to apply layout
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
+
+        # Disable rename controls initially
+        self.set_rename_controls_enabled(False)
 
         # VLC widget for video output
         if sys.platform == "darwin":
@@ -308,6 +334,79 @@ class VideoPlayer(QtWidgets.QMainWindow):
         )
         logging.debug("Loaded video files: %s", self.video_files)  # Debugging statement
 
+    def rename_video(self):
+        if self.video_files and self.current_video_index >= 0:
+            # Get the current video path
+            old_video_path = self.video_files[self.current_video_index]
+            old_dir = os.path.dirname(old_video_path)
+            old_name = os.path.basename(old_video_path)
+            old_base_name, old_ext = os.path.splitext(old_name)
+
+            # Get the new name from the line edit
+            new_base_name = self.rename_line_edit.text().strip()
+
+            # Validate new name
+            if not new_base_name:
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    "Invalid Name",
+                    "The new video name cannot be empty."
+                )
+                return
+
+            # Check for invalid characters
+            if any(char in new_base_name for char in r'\/:*?"<>|'):
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    "Invalid Characters",
+                    "The video name contains invalid characters."
+                )
+                return
+
+            # Construct new video path
+            new_video_name = new_base_name + old_ext
+            new_video_path = os.path.join(old_dir, new_video_name)
+
+            # Check if a file with the new name already exists
+            if os.path.exists(new_video_path):
+                QtWidgets.QMessageBox.warning(
+                    self,
+                    "File Exists",
+                    f"A file with the name '{new_video_name}' already exists."
+                )
+                return
+
+            # Attempt to rename the file
+            try:
+                # Stop the media player
+                self.media_player.stop()
+
+                os.rename(old_video_path, new_video_path)
+                logging.debug(f"Renamed video: {old_video_path} to {new_video_path}")
+
+                # Update the video files list
+                self.video_files[self.current_video_index] = new_video_path
+
+                # Reload the video with the new path
+                self.play_video()
+
+                QtWidgets.QMessageBox.information(
+                    self,
+                    "Success",
+                    f"Video renamed to '{new_video_name}'."
+                )
+            except Exception as e:
+                logging.error(f"Failed to rename video: {e}")
+                QtWidgets.QMessageBox.critical(
+                    self,
+                    "Rename Error",
+                    f"Failed to rename video: {e}"
+                )
+
+    def set_rename_controls_enabled(self, enabled):
+        self.rename_line_edit.setEnabled(enabled)
+        self.rename_button.setEnabled(enabled)
+
     def play_video(self):
         if self.video_files and self.current_video_index >= 0:
             video_path = self.video_files[self.current_video_index]
@@ -318,7 +417,17 @@ class VideoPlayer(QtWidgets.QMainWindow):
             # Update the window title with the video name
             video_name = os.path.basename(video_path)
             self.setWindowTitle(f"DiegoMOV プレーヤー - {video_name}")
-            logging.debug(f"Playing video: {video_path}")  # Debugging statement
+
+            # Update the rename line edit with the current video name (without extension)
+            base_name, _ = os.path.splitext(video_name)
+            self.rename_line_edit.setText(base_name)
+
+            # Enable rename controls
+            self.set_rename_controls_enabled(True)
+
+    def stop_video(self):
+        self.media_player.stop()
+        self.set_rename_controls_enabled(False)
 
     def play_pause(self):
         if self.media_player.is_playing():

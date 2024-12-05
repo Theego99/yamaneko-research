@@ -4,15 +4,20 @@ import cv2
 import json
 import shutil
 import tempfile
-import subprocess  # Import subprocess to open external applications
+import subprocess
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QLineEdit,
-    QPushButton, QVBoxLayout, QHBoxLayout, QSpinBox, QDoubleSpinBox, QCheckBox,
-    QTextEdit, QProgressBar, QWidget, QMessageBox  # Import QMessageBox for confirmations
+    QPushButton, QVBoxLayout, QHBoxLayout, QProgressBar, QWidget,
+    QTextEdit, QCheckBox, QSpinBox, QDoubleSpinBox, QMessageBox, QSizePolicy, QScrollArea
 )
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal, Qt, QSize
+from PyQt5.QtGui import QIcon, QFont, QPalette, QColor
+from megadetector.detection.run_detector_batch import load_detector
+
 from megadetector.detection import video_utils
 from megadetector.detection.run_detector_batch import load_detector, process_images
+from torch import Size
+
 
 
 processed_videos = 0
@@ -448,19 +453,221 @@ class ProcessingThread(QThread):
         finally:
             self.finished.emit()
 
+
 class VideoDetectionApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Animal Detection Tool")
+        self.setGeometry(100, 100, 1200, 800)  # Full-screen optimized
+
+        # Initialize languages and default language
+        self.languages = ['Japanese', 'Spanish', 'Chinese', 'English', 'Korean']
+        self.current_language_index = 0
+        self.language = self.languages[self.current_language_index]
+
+        # Initialize text for file dialog
+        self.select_input_folder_text = "処理対象フォルダーを選択"  # Default to Japanese
+
         self.initUI()
 
     def initUI(self):
-        # Create widgets
-        self.input_dir_label = QLabel("処理対象フォルダー:")
-        self.input_dir_line_edit = QLineEdit()
-        self.browse_button = QPushButton("参照")
-        self.browse_button.clicked.connect(self.browse_input_directory)
+        # Main layout
+        main_widget = QWidget()
+        main_layout = QHBoxLayout()
+        main_widget.setLayout(main_layout)
+        self.setCentralWidget(main_widget)
 
+        # Left sidebar
+        self.sidebar = QWidget()
+        self.sidebar_layout = QVBoxLayout()
+        self.sidebar.setLayout(self.sidebar_layout)
+        self.sidebar.setFixedWidth(50)  # Adjusted width
+        self.sidebar.setStyleSheet("background-color: #252525;")
+        main_layout.addWidget(self.sidebar)
+
+        # Settings button with icon
+        self.settings_button = QPushButton()
+        settings_icon = QIcon('assets/settings_icon.png')  # Ensure this icon exists
+        self.settings_button.setIcon(settings_icon)
+        self.settings_button.setIconSize(QSize(32, 32))
+        self.settings_button.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3A3A3A;
+                border-radius: 5px;
+            }
+        """)
+        self.settings_button.clicked.connect(self.toggle_settings_panel)
+        self.sidebar_layout.addWidget(self.settings_button)
+
+        # Language toggle button with icon
+        self.language_button = QPushButton()
+        language_icon = QIcon('assets/language_icon.png')  # Ensure this icon exists
+        self.language_button.setIcon(language_icon)
+        self.language_button.setIconSize(QSize(32, 32))
+        self.language_button.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #3A3A3A;
+                border-radius: 5px;
+            }
+        """)
+        self.language_button.clicked.connect(self.toggle_language)
+        self.sidebar_layout.addWidget(self.language_button)
+
+        # Add stretch to push items to the bottom
+        self.sidebar_layout.addStretch()
+
+        # Settings panel (initially hidden)
+        self.settings_panel = QWidget()
+        self.settings_panel_layout = QVBoxLayout()
+        self.settings_panel.setLayout(self.settings_panel_layout)
+        self.settings_panel.setFixedWidth(300)  # Fixed width
+        self.settings_panel.setStyleSheet("background-color: #1E1E1E;")
+        self.settings_panel.hide()
+        # Insert settings panel right after the sidebar
+        main_layout.addWidget(self.settings_panel)
+
+        # Settings widgets
+        self.initSettingsPanel()
+
+        # Main area
+        self.main_area = QWidget()
+        self.main_area_layout = QVBoxLayout()
+        self.main_area_layout.setSpacing(10)  # Consistent spacing
+        self.main_area.setLayout(self.main_area_layout)
+        main_layout.addWidget(self.main_area)
+
+        # Input directory selection
+        input_dir_layout = QHBoxLayout()
+        self.input_dir_label = QLabel("処理対象フォルダー:")
+        self.input_dir_label.setStyleSheet("font-size: 18px; color: #FFFFFF;")
+        self.input_dir_line_edit = QLineEdit()
+        self.input_dir_line_edit.setStyleSheet("font-size: 16px; color: #FFFFFF; background-color: #2E2E2E; border: none; padding: 5px;")
+        self.browse_button = QPushButton("参照")
+        self.browse_button.setStyleSheet("""
+            QPushButton {
+                font-size: 16px; 
+                color: #FFFFFF; 
+                background-color: #FF9800; 
+                border: none;
+                padding: 10px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #FB8C00;
+            }
+        """)
+        self.browse_button.clicked.connect(self.browse_input_directory)
+        input_dir_layout.addWidget(self.input_dir_label)
+        input_dir_layout.addWidget(self.input_dir_line_edit)
+        input_dir_layout.addWidget(self.browse_button)
+        self.main_area_layout.addLayout(input_dir_layout)
+
+        # Start processing button
+        self.start_button = QPushButton("処理開始")
+        self.start_button.setStyleSheet("""
+            QPushButton {
+                font-size: 18px; 
+                padding: 10px; 
+                color: #FFFFFF; 
+                background-color: #009688; 
+                border: none;
+                border-radius: 10px;
+            }
+            QPushButton:hover {
+                background-color: #00796B;
+            }
+        """)
+        self.start_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.start_button.setMaximumWidth(200)  # Set a maximum width
+        self.start_button.clicked.connect(self.start_processing)
+        self.main_area_layout.addWidget(self.start_button, alignment=Qt.AlignLeft)
+
+        # Open external app button
+        self.open_external_app_button = QPushButton("動画再生APPを開く")
+        self.open_external_app_button.setStyleSheet("""
+            QPushButton {
+                font-size: 18px; 
+                color: #FFFFFF; 
+                background-color: #9C27B0; 
+                border: none;
+                padding: 10px;
+                border-radius: 10px;
+            }
+            QPushButton:hover {
+                background-color: #7B1FA2;
+            }
+        """)
+        self.open_external_app_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.open_external_app_button.setMaximumWidth(200)  # Set a maximum width
+        self.open_external_app_button.clicked.connect(self.open_external_application)
+        self.main_area_layout.addWidget(self.open_external_app_button, alignment=Qt.AlignLeft)
+
+        # Progress bar
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setValue(0)
+        self.progress_bar.setFormat("%v/%m")
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                background-color: rgba(62,62,62,255);
+                border: none;
+                color: #f0f0f0;
+                text-align: center;
+                height: 30px;
+                border-radius: 5px;
+            }
+            QProgressBar::chunk {
+                background-color: #4CAF50;
+                border-radius: 5px;
+            }
+        """)
+        self.progress_bar.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.progress_bar.setMaximumWidth(400)
+        self.main_area_layout.addWidget(self.progress_bar, alignment=Qt.AlignLeft)
+
+        # Show logs label
+        self.show_logs_label = QLabel("<a href='#'>ログを表示</a>")
+        self.show_logs_label.setOpenExternalLinks(False)
+        self.show_logs_label.linkActivated.connect(self.toggle_logs)
+        self.show_logs_label.setStyleSheet("font-size: 18px; color: #FFFFFF;")
+        self.main_area_layout.addWidget(self.show_logs_label, alignment=Qt.AlignLeft)
+
+        # Log text edit
+        self.log_text_edit = QTextEdit()
+        self.log_text_edit.setReadOnly(True)
+        self.log_text_edit.hide()  # Initially hidden
+        self.log_text_edit.setStyleSheet("""
+            QTextEdit {
+                background-color: #2E2E2E;
+                color: #FFFFFF;
+                border: 1px solid #4E4E4E;
+                border-radius: 5px;
+                font-size: 14px;
+            }
+        """)
+        self.log_text_edit.setFixedHeight(200)  # Set a fixed height
+        self.main_area_layout.addWidget(self.log_text_edit)
+
+        # Apply styles
+        self.applyStyles()
+
+    def initSettingsPanel(self):
+        # Use a QScrollArea to keep the settings panel size consistent
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        settings_content = QWidget()
+        settings_layout = QVBoxLayout(settings_content)
+        settings_layout.setSpacing(10)  # Consistent spacing between rows
+        scroll_area.setWidget(settings_content)
+
+        # Settings widgets
         self.frame_interval_label = QLabel("コマ間隔 (コマ何枚に１枚処理するか):")
         self.frame_interval_spinbox = QSpinBox()
         self.frame_interval_spinbox.setRange(1, 1000)
@@ -472,112 +679,219 @@ class VideoDetectionApp(QMainWindow):
         self.confidence_threshold_spinbox.setSingleStep(0.01)
         self.confidence_threshold_spinbox.setValue(0.4)
 
-        # *** New GUI Elements Start Here ***
         self.processing_duration_label = QLabel("動画の何秒まで処理:")
         self.processing_duration_spinbox = QSpinBox()
-        self.processing_duration_spinbox.setRange(1, 3600)  # 1 second to 1 hour
-        self.processing_duration_spinbox.setValue(5)  # Default value
-        # *** New GUI Elements End Here ***
+        self.processing_duration_spinbox.setRange(1, 3600)
+        self.processing_duration_spinbox.setValue(5)
 
         self.create_detection_data_checkbox = QCheckBox("'detection_data'フォルダーを作成する")
         self.create_detection_data_checkbox.setChecked(False)
 
         self.delete_no_detection_checkbox = QCheckBox("認識情報がない動画を削除する")
         self.delete_no_detection_checkbox.setChecked(False)
-        self.open_external_app_button = QPushButton("動画再生APPを開く")
-        self.open_external_app_button.clicked.connect(self.open_external_application)
 
-        self.remove_prefixes_button = QPushButton("すべてのファイル名からタグを消す")
-        self.remove_prefixes_button.clicked.connect(self.remove_prefixes_from_files)
-
-        # Prefix for people/cars detection
-        self.hito_prefix_label = QLabel("人・車のタグ:")
-        self.hito_prefix_line_edit = QLineEdit()
-        self.hito_prefix_line_edit.setText("hito_")  # Default value
-
-
-        # Prefix for animal detection
-        self.animal_prefix_label = QLabel("鳥以外の動物のタグ:")
-        self.animal_prefix_line_edit = QLineEdit()
-        self.animal_prefix_line_edit.setText("nekokamo_")  # Default value
-
-        
         self.save_all_checkbox = QCheckBox("すべてのフレームを保存")
         self.save_all_checkbox.setChecked(False)
 
         self.rename_files_checkbox = QCheckBox("タグで動画・画像の名前を変更")
         self.rename_files_checkbox.setChecked(False)
 
+        self.hito_prefix_label = QLabel("人・車のタグ:")
+        self.hito_prefix_line_edit = QLineEdit()
+        self.hito_prefix_line_edit.setText("hito_")
 
+        self.animal_prefix_label = QLabel("鳥以外の動物のタグ:")
+        self.animal_prefix_line_edit = QLineEdit()
+        self.animal_prefix_line_edit.setText("nekokamo_")
 
-        self.start_button = QPushButton("処理開始")
-        self.start_button.clicked.connect(self.start_processing)
+        # Remove prefixes button
+        self.remove_prefixes_button = QPushButton("すべてのファイル名からタグを消す")
+        self.remove_prefixes_button.clicked.connect(self.remove_prefixes_from_files)
+        self.remove_prefixes_button.setStyleSheet("""
+            QPushButton {
+                font-size: 16px; 
+                color: #FFFFFF; 
+                background-color: #FF4081; 
+                border: none;
+                border-radius: 10px;
+                padding: 10px;
+            }
+            QPushButton:hover {
+                background-color: #F50057;
+            }
+        """)
+        self.remove_prefixes_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.remove_prefixes_button.setMaximumWidth(250)
 
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setValue(0)
-        self.progress_bar.setFormat("%v/%m")  # Set initial format to show current/maximum
+        # Apply styles to settings widgets
+        settings_widgets = [
+            self.frame_interval_label, self.frame_interval_spinbox,
+            self.confidence_threshold_label, self.confidence_threshold_spinbox,
+            self.processing_duration_label, self.processing_duration_spinbox,
+            self.create_detection_data_checkbox, self.delete_no_detection_checkbox,
+            self.save_all_checkbox, self.rename_files_checkbox,
+            self.hito_prefix_label, self.hito_prefix_line_edit,
+            self.animal_prefix_label, self.animal_prefix_line_edit,
+            self.remove_prefixes_button
+        ]
 
-        self.log_text_edit = QTextEdit()
-        self.log_text_edit.setReadOnly(True)
-        
-        # Layouts
-        prefix_layout = QVBoxLayout()
-        layout = QVBoxLayout()
-        input_dir_layout = QHBoxLayout()
-        input_dir_layout.addWidget(self.input_dir_label)
-        input_dir_layout.addWidget(self.input_dir_line_edit)
-        input_dir_layout.addWidget(self.browse_button)
+        for widget in settings_widgets:
+            widget.setStyleSheet("font-size: 16px; color: #FFFFFF;")
+            settings_layout.addWidget(widget)
 
-        frame_interval_layout = QHBoxLayout()
-        frame_interval_layout.addWidget(self.frame_interval_label)
-        frame_interval_layout.addWidget(self.frame_interval_spinbox)
+        # Add the scroll area to the settings panel
+        self.settings_panel_layout.addWidget(scroll_area)
 
-        confidence_threshold_layout = QHBoxLayout()
-        confidence_threshold_layout.addWidget(self.confidence_threshold_label)
-        confidence_threshold_layout.addWidget(self.confidence_threshold_spinbox)
+    def applyStyles(self):
+        # Set the main window's background color
+        self.setStyleSheet("background-color: #1E1E1E;")
+        # Set fonts and colors globally if needed
 
-        # *** New Layout for Processing Duration ***
-        processing_duration_layout = QHBoxLayout()
-        processing_duration_layout.addWidget(self.processing_duration_label)
-        processing_duration_layout.addWidget(self.processing_duration_spinbox)
-        # *** End of New Layout ***
+    def toggle_settings_panel(self):
+        if self.settings_panel.isVisible():
+            self.settings_panel.hide()
+        else:
+            self.settings_panel.show()
 
-        layout.addLayout(input_dir_layout)
-        layout.addLayout(frame_interval_layout)
-        layout.addLayout(confidence_threshold_layout)
-        layout.addLayout(processing_duration_layout)  # Add new layout here
-        layout.addWidget(self.create_detection_data_checkbox)
-        layout.addWidget(self.delete_no_detection_checkbox)
-        layout.addWidget(self.save_all_checkbox)
-        layout.addWidget(self.open_external_app_button)
-        layout.addWidget(self.remove_prefixes_button)
-        # Add prefix inputs
-        layout.addLayout(prefix_layout)
+    def toggle_language(self):
+        # Rotate through available languages
+        self.current_language_index = (self.current_language_index + 1) % len(self.languages)
+        self.language = self.languages[self.current_language_index]
+        self.update_language()
 
-        layout.addWidget(self.start_button)
-        layout.addWidget(self.progress_bar)
-        layout.addWidget(self.log_text_edit)
-        hito_prefix_layout = QHBoxLayout()
-        hito_prefix_layout.addWidget(self.hito_prefix_label)
-        hito_prefix_layout.addWidget(self.hito_prefix_line_edit)
+    def update_language(self):
+        # Define translations for each language
+        translations = {
+            'Japanese': {
+                'input_dir_label': "処理対象フォルダー:",
+                'browse_button': "参照",
+                'start_button': "処理開始",
+                'open_external_app_button': "動画再生APPを開く",
+                'show_logs_label_show': "<a href='#'>ログを表示</a>",
+                'show_logs_label_hide': "<a href='#'>ログを隠す</a>",
+                'frame_interval_label': "コマ間隔 (コマ何枚に１枚処理するか):",
+                'confidence_threshold_label': "確信度のしきい値:",
+                'processing_duration_label': "動画の何秒まで処理:",
+                'create_detection_data_checkbox': "'detection_data'フォルダーを作成する",
+                'delete_no_detection_checkbox': "認識情報がない動画を削除する",
+                'save_all_checkbox': "すべてのフレームを保存",
+                'rename_files_checkbox': "タグで動画・画像の名前を変更",
+                'hito_prefix_label': "人・車のタグ:",
+                'animal_prefix_label': "鳥以外の動物のタグ:",
+                'remove_prefixes_button': "すべてのファイル名からタグを消す",
+                'select_input_folder': "処理対象フォルダーを選択"
+            },
+            'Spanish': {
+                'input_dir_label': "Carpeta de entrada:",
+                'browse_button': "Examinar",
+                'start_button': "Iniciar procesamiento",
+                'open_external_app_button': "Abrir reproductor de videos",
+                'show_logs_label_show': "<a href='#'>Mostrar registros</a>",
+                'show_logs_label_hide': "<a href='#'>Ocultar registros</a>",
+                'frame_interval_label': "Intervalo de cuadros:",
+                'confidence_threshold_label': "Umbral de confianza:",
+                'processing_duration_label': "Procesar videos hasta (segundos):",
+                'create_detection_data_checkbox': "Crear carpeta 'detection_data'",
+                'delete_no_detection_checkbox': "Eliminar videos sin detecciones",
+                'save_all_checkbox': "Guardar todos los cuadros",
+                'rename_files_checkbox': "Renombrar archivos con etiquetas",
+                'hito_prefix_label': "Etiqueta para humanos/vehículos:",
+                'animal_prefix_label': "Etiqueta para animales no aves:",
+                'remove_prefixes_button': "Eliminar etiquetas de nombres de archivos",
+                'select_input_folder': "Seleccionar carpeta de entrada"
+            },
+            'Chinese': {
+                'input_dir_label': "输入文件夹:",
+                'browse_button': "浏览",
+                'start_button': "开始处理",
+                'open_external_app_button': "打开视频播放器",
+                'show_logs_label_show': "<a href='#'>显示日志</a>",
+                'show_logs_label_hide': "<a href='#'>隐藏日志</a>",
+                'frame_interval_label': "帧间隔:",
+                'confidence_threshold_label': "置信度阈值:",
+                'processing_duration_label': "处理视频时长 (秒):",
+                'create_detection_data_checkbox': "创建'detection_data'文件夹",
+                'delete_no_detection_checkbox': "删除没有检测的文件",
+                'save_all_checkbox': "保存所有帧",
+                'rename_files_checkbox': "用标签重命名文件",
+                'hito_prefix_label': "人/车辆标签:",
+                'animal_prefix_label': "非鸟类动物标签:",
+                'remove_prefixes_button': "从文件名中删除标签",
+                'select_input_folder': "选择输入文件夹"
+            },
+            'English': {
+                'input_dir_label': "Input Folder:",
+                'browse_button': "Browse",
+                'start_button': "Start Processing",
+                'open_external_app_button': "Open Video Player App",
+                'show_logs_label_show': "<a href='#'>Show Logs</a>",
+                'show_logs_label_hide': "<a href='#'>Hide Logs</a>",
+                'frame_interval_label': "Frame Interval:",
+                'confidence_threshold_label': "Confidence Threshold:",
+                'processing_duration_label': "Process Videos Up To (seconds):",
+                'create_detection_data_checkbox': "Create 'detection_data' Folder",
+                'delete_no_detection_checkbox': "Delete Videos Without Detections",
+                'save_all_checkbox': "Save All Frames",
+                'rename_files_checkbox': "Rename Files with Tags",
+                'hito_prefix_label': "Human/Vehicle Tag:",
+                'animal_prefix_label': "Non-Bird Animal Tag:",
+                'remove_prefixes_button': "Remove Tags from All File Names",
+                'select_input_folder': "Select Input Folder"
+            },
+            'Korean': {
+                'input_dir_label': "입력 폴더:",
+                'browse_button': "찾아보기",
+                'start_button': "처리 시작",
+                'open_external_app_button': "비디오 플레이어 앱 열기",
+                'show_logs_label_show': "<a href='#'>로그 보기</a>",
+                'show_logs_label_hide': "<a href='#'>로그 숨기기</a>",
+                'frame_interval_label': "프레임 간격:",
+                'confidence_threshold_label': "신뢰도 임계값:",
+                'processing_duration_label': "비디오 처리 시간 (초):",
+                'create_detection_data_checkbox': "'detection_data' 폴더 생성",
+                'delete_no_detection_checkbox': "감지되지 않은 비디오 삭제",
+                'save_all_checkbox': "모든 프레임 저장",
+                'rename_files_checkbox': "태그로 파일 이름 바꾸기",
+                'hito_prefix_label': "사람/차량 태그:",
+                'animal_prefix_label': "새가 아닌 동물 태그:",
+                'remove_prefixes_button': "모든 파일 이름에서 태그 제거",
+                'select_input_folder': "입력 폴더 선택"
+            }
+        }
 
-        animal_prefix_layout = QHBoxLayout()
-        animal_prefix_layout.addWidget(self.animal_prefix_label)
-        animal_prefix_layout.addWidget(self.animal_prefix_line_edit)
+        # Get the translation dictionary for the current language
+        trans = translations.get(self.language, translations['English'])  # Default to English
 
-        prefix_layout.addLayout(hito_prefix_layout)
-        prefix_layout.addLayout(animal_prefix_layout)
-        layout.addWidget(self.rename_files_checkbox)
-        layout.addWidget(self.start_button)
-        layout.addWidget(self.progress_bar)
-        layout.addWidget(self.log_text_edit)
+        # Update labels and texts
+        self.input_dir_label.setText(trans['input_dir_label'])
+        self.browse_button.setText(trans['browse_button'])
+        self.start_button.setText(trans['start_button'])
+        self.open_external_app_button.setText(trans['open_external_app_button'])
+        if self.log_text_edit.isVisible():
+            self.show_logs_label.setText(trans['show_logs_label_hide'])
+        else:
+            self.show_logs_label.setText(trans['show_logs_label_show'])
+        self.frame_interval_label.setText(trans['frame_interval_label'])
+        self.confidence_threshold_label.setText(trans['confidence_threshold_label'])
+        self.processing_duration_label.setText(trans['processing_duration_label'])
+        self.create_detection_data_checkbox.setText(trans['create_detection_data_checkbox'])
+        self.delete_no_detection_checkbox.setText(trans['delete_no_detection_checkbox'])
+        self.save_all_checkbox.setText(trans['save_all_checkbox'])
+        self.rename_files_checkbox.setText(trans['rename_files_checkbox'])
+        self.hito_prefix_label.setText(trans['hito_prefix_label'])
+        self.animal_prefix_label.setText(trans['animal_prefix_label'])
+        self.remove_prefixes_button.setText(trans['remove_prefixes_button'])
+        self.select_input_folder_text = trans['select_input_folder']
 
-        central_widget = QWidget()
-        central_widget.setLayout(layout)
-        self.setCentralWidget(central_widget)
+    def toggle_logs(self):
+        if self.log_text_edit.isVisible():
+            self.log_text_edit.hide()
+        else:
+            self.log_text_edit.show()
+        self.update_language()  # Update the show/hide logs text based on visibility
 
     def browse_input_directory(self):
-        dir_name = QFileDialog.getExistingDirectory(self, "処理対象フォルダーを選択", "")
+        dir_name = QFileDialog.getExistingDirectory(self, self.select_input_folder_text, "")
         if dir_name:
             self.input_dir_line_edit.setText(dir_name)
 
@@ -592,6 +906,8 @@ class VideoDetectionApp(QMainWindow):
             return
 
         self.log("Starting processing thread...")
+
+        # Use settings variables
         every_n_frames = self.frame_interval_spinbox.value()
         confidence_threshold = self.confidence_threshold_spinbox.value()
         create_detection_data = self.create_detection_data_checkbox.isChecked()
@@ -614,13 +930,12 @@ class VideoDetectionApp(QMainWindow):
             confidence_threshold=confidence_threshold,
             create_detection_data=create_detection_data,
             delete_no_detection=delete_no_detection,
-            save_all_checkbox=save_all_checkbox,
             processing_duration_seconds=processing_duration_seconds,
+            save_all_checkbox=save_all_checkbox,
             rename_files_checkbox=rename_files_checkbox,
             hito_prefix=hito_prefix,
             animal_prefix=animal_prefix
         )
-
 
         # Connect signals
         self.processing_thread.log_signal.connect(self.log)
@@ -635,25 +950,23 @@ class VideoDetectionApp(QMainWindow):
         self.log_text_edit.append(message)
 
     def update_progress(self, processed, total):
-        """
-        Update the progress bar based on the current progress.
-        """
         self.progress_bar.setMaximum(total)
         self.progress_bar.setValue(processed)
-        # Display progress as "Processed/Total"
         self.progress_bar.setFormat(f"{processed}/{total}")
         self.log(f"Progress: {processed}/{total}")
+
     def processing_finished(self):
         self.log("Processing complete")
         self.start_button.setEnabled(True)
+
     def open_external_application(self):
         """
         Opens the external application specified by the path.
         Passes the selected folder as an argument if one is selected.
         """
-        script_path = r"C:\yamaneko-kenkyu\animal-detection\exclusive_player\video_player.py"
+        script_path = r"C:\yamaneko-kenkyu\animal-detection\exclusive_player\video_player.py"  # Adjust the path
         python_executable = sys.executable  # Path to the current Python interpreter
-    
+
         # Get the selected folder path from the input field
         input_folder = self.input_dir_line_edit.text()
 
@@ -671,8 +984,6 @@ class VideoDetectionApp(QMainWindow):
         except Exception as e:
             self.log(f"Failed to open external application: {str(e)}")
 
-
-
     def remove_prefixes_from_files(self):
         """
         Removes specified prefixes from file names in the selected folder.
@@ -685,19 +996,37 @@ class VideoDetectionApp(QMainWindow):
             self.log("Selected folder does not exist.")
             return
 
-        # Get user-defined prefixes
+        # Get user-defined prefixes from settings variables
         hito_prefix = self.hito_prefix_line_edit.text()
         animal_prefix = self.animal_prefix_line_edit.text()
         prefixes = [hito_prefix, animal_prefix]
 
         # Confirm renaming
-        reply = QMessageBox.question(
-            self,
-            "Confirm Prefix Removal",
-            f"This will remove the prefixes {prefixes} from file names in the selected folder.\nAre you sure you want to proceed?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
+        message_box = QMessageBox(self)
+        message_box.setWindowTitle("Confirm Prefix Removal")
+        message_box.setText(f"This will remove the prefixes {prefixes} from file names in the selected folder.\nAre you sure you want to proceed?")
+        message_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        message_box.setStyleSheet("""
+            QMessageBox {
+                background-color: #2E2E2E;
+                color: #FFFFFF;
+            }
+            QLabel {
+                color: #FFFFFF;
+            }
+            QPushButton {
+                font-size: 16px;
+                padding: 5px;
+                border-radius: 5px;
+                background-color: #3A3A3A;
+                color: #FFFFFF;
+            }
+            QPushButton:hover {
+                background-color: #4A4A4A;
+            }
+        """)
+
+        reply = message_box.exec_()
 
         if reply == QMessageBox.No:
             self.log("Prefix removal canceled.")
@@ -728,13 +1057,30 @@ class VideoDetectionApp(QMainWindow):
         for original, new in renamed_files:
             self.log(f"Renamed: {original} -> {new}")
 
-
-        def processing_finished(self):
-            self.log("Processing complete")
-            self.start_button.setEnabled(True)
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+
+    # Apply custom font if desired
+    font = QFont("Segoe UI", 10)
+    app.setFont(font)
+
+    # Adjust application palette for better contrast
+    palette = QPalette()
+    palette.setColor(QPalette.WindowText, QColor(240, 240, 240))
+    palette.setColor(QPalette.Button, QColor(53, 53, 53))
+    palette.setColor(QPalette.Light, QColor(180, 180, 180))
+    palette.setColor(QPalette.Midlight, QColor(90, 90, 90))
+    palette.setColor(QPalette.Dark, QColor(35, 35, 35))
+    palette.setColor(QPalette.Text, QColor(240, 240, 240))
+    palette.setColor(QPalette.BrightText, QColor(240, 240, 240))
+    palette.setColor(QPalette.ButtonText, QColor(240, 240, 240))
+    palette.setColor(QPalette.Base, QColor(42, 42, 42))
+    palette.setColor(QPalette.Window, QColor(53, 53, 53))
+    palette.setColor(QPalette.Shadow, QColor(20, 20, 20))
+    palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
+    palette.setColor(QPalette.HighlightedText, QColor(240, 240, 240))
+    app.setPalette(palette)
+
     window = VideoDetectionApp()
-    window.show()
+    window.showMaximized()  # Show the window maximized for full-screen experience
     sys.exit(app.exec_())
